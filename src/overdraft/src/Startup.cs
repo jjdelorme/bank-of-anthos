@@ -38,11 +38,17 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             {
                 app.UseDeveloperExceptionPage();
                 app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "overdraft v1"));
+                app.UseSwaggerUI(c => 
+                {
+                    c.SwaggerEndpoint("/swagger/v1/swagger.json", "overdraft v1");
+                    c.RoutePrefix = string.Empty;
+                });
             }
-#if !DEBUG
-            app.UseHttpsRedirection();
-#endif
+            else
+            {
+                app.UseHttpsRedirection();
+            }
+
             app.UseRouting();
 
             app.UseAuthorization();

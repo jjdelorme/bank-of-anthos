@@ -25,7 +25,10 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft.Tests
         public void Create()
         {
             // Dummy data for now.
-            Assert.True(controller.Create() == "ACCOUNT_XXXX", "Should return account id");
+            var request = new OverdraftController.OverdraftRequest("9999", 500);
+
+            Assert.True(controller.Create(request) == 
+                "ACCOUNT_9999", "Should return account id");
         }   
     }
 }

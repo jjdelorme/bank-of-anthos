@@ -9,6 +9,8 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
     {
         private readonly ILogger<OverdraftController> _logger;
 
+        public record OverdraftRequest(string AccountNum, int Amount);
+
         public OverdraftController(ILogger<OverdraftController> logger)
         {
             _logger = logger;
@@ -27,9 +29,9 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
         }
 
         [HttpPost("/create")]
-        public string Create()
+        public string Create(OverdraftRequest request)
         {
-            return "ACCOUNT_XXXX";
+            return "ACCOUNT_" + request.AccountNum;
         }
 
         [HttpPost("/credit")]
