@@ -29,6 +29,11 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.cloud.gcp.pubsub.core.PubSubTemplate;
+import org.springframework.cloud.gcp.pubsub.integration.outbound.PubSubMessageHandler;
+import org.springframework.integration.annotation.MessagingGateway;
+import org.springframework.integration.annotation.ServiceActivator;
+import org.springframework.messaging.MessageHandler;
 
 /**
  * Entry point for the LedgerWriter Spring Boot application.
@@ -134,4 +139,22 @@ public class LedgerWriterApplication {
             }
         }).build();
     }
+
+    // Outbound channel adapter
+
+    // tag::messageSender[]
+    @Bean
+    @ServiceActivator(inputChannel = "pubsubOutputChannel")
+    public MessageHandler messageSender(PubSubTemplate pubsubTemplate) {
+        return new PubSubMessageHandler(pubsubTemplate, "pubsubtopic-sample");
+    }
+    // end::messageSender[]
+
+    // tag::messageGateway[]
+    @MessagingGateway(defaultRequestChannel = "pubsubOutputChannel")
+    public interface PubsubOutboundGateway {
+
+        void sendToPubsub(String text);
+    }
+    // end::messageGateway[]        
 }

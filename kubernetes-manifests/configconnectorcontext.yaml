@@ -1,0 +1,14 @@
+# Instructions to follow (how do we automate this?) to setup config connector:
+# https://cloud.google.com/config-connector/docs/how-to/install-upgrade-uninstall
+
+# configconnectorcontext.yaml
+
+apiVersion: core.cnrm.cloud.google.com/v1beta1
+kind: ConfigConnectorContext
+metadata:
+  # you can only have one ConfigConnectorContext per Namespace
+  name: configconnectorcontext.core.cnrm.cloud.google.com
+  namespace: anthos-bank
+spec:
+  # The Google Service Account used to authenticate Google Cloud APIs in this Namespace
+  googleServiceAccount: "bank-of-anthos-gsa@jasondel-test-project.iam.gserviceaccount.com"

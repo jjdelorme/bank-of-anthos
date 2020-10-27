@@ -34,6 +34,8 @@ spec:
         - name: publickey
           mountPath: "/root/.ssh"
           readOnly: true
+        - name: google-cloud-key
+          mountPath: /var/secrets/google            
         env:
         - name: VERSION
           value: "v0.3.0"
@@ -53,6 +55,10 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        - name: GOOGLE_CLOUD_PROJECT
+          value: jasondel-test-project
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /var/secrets/google/key.json
         envFrom:
         - configMapRef:
             name: environment-config
