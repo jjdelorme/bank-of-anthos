@@ -84,7 +84,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
                 if (accountClaim != null)
                 {
                     accountNum = accountClaim.Value;
-                    _logger.Log(LogLevel.Debug, $"Got acount claim: {accountNum}");
+                    _logger.Log(LogLevel.Debug, $"Got account claim: {accountNum}");
                 }
             }
             
