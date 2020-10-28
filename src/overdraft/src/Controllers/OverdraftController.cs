@@ -33,6 +33,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
         [HttpPost("/create")]
         public string Create(OverdraftRequest request)
         {
+            var bearer = this.Request.Headers["Authorization"][0];
             return "ACCOUNT_" + request.AccountNum;
         }
 
