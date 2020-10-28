@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.Security.Cryptography;
 
 namespace Anthos.Samples.BankOfAnthos.Overdraft
 {
@@ -49,24 +50,39 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             .AddJwtBearer(x =>
             {
                 x.RequireHttpsMetadata = false;
+                x.IncludeErrorDetails = true;
                 x.SaveToken = true;
                 x.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(GetJwtKey()),
+                    IssuerSigningKey = GetJwtKey(),
                     ValidateIssuer = false,
                     ValidateAudience = false
                 };
             });                        
         }
 
-        private byte[] GetJwtKey()
+        private SecurityKey GetJwtKey()
         {
-            string key = Configuration[JWT_SECRET_NAME];
-            if (string.IsNullOrEmpty(key))
+            string secret = Configuration[JWT_SECRET_NAME];
+            if (string.IsNullOrEmpty(secret))
                 throw new ApplicationException($"Missing JWT Key: {JWT_SECRET_NAME}");
 
-            return Encoding.ASCII.GetBytes(key);
+            byte[] bytes = Convert.FromBase64String(secret);
+            string publicKey = Encoding.UTF8.GetString(bytes);
+
+            publicKey = publicKey.Replace("-----BEGIN PUBLIC KEY-----", "");
+            publicKey = publicKey.Replace("-----END PUBLIC KEY-----", "");
+            publicKey = publicKey.Replace("\r", "");
+            publicKey = publicKey.Replace(Environment.NewLine, "");
+
+            RSA rsa = RSA.Create();
+            rsa.ImportSubjectPublicKeyInfo(
+                source: Convert.FromBase64String(publicKey),
+                bytesRead: out int _
+            );
+            
+            return new RsaSecurityKey(rsa);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -89,6 +105,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
 
             app.UseRouting();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>

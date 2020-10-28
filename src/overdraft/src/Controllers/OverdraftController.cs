@@ -1,6 +1,7 @@
 using System;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Anthos.Samples.BankOfAnthos.Overdraft
 {
@@ -28,6 +29,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             return Ok("ok");
         }
 
+        [Authorize]
         [HttpPost("/create")]
         public string Create(OverdraftRequest request)
         {
