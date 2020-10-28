@@ -16,8 +16,6 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
 {
     public class Startup
     {
-        private const string JWT_SECRET_NAME = "JwtSecret";
-
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -28,7 +26,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-
+            services.AddSingleton<IBankService, BankService>();
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
@@ -64,6 +62,8 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
 
         private SecurityKey GetJwtKey()
         {
+            const string JWT_SECRET_NAME = "JwtSecret";
+
             string secret = Configuration[JWT_SECRET_NAME];
             if (string.IsNullOrEmpty(secret))
                 throw new ApplicationException($"Missing JWT Key: {JWT_SECRET_NAME}");

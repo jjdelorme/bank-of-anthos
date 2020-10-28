@@ -12,15 +12,18 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
     public class OverdraftController : ControllerBase
     {
         private const string BALANCES_API_ADDR = "ServiceApi:BALANCES_API_ADDR";
+
         private readonly ILogger<OverdraftController> _logger;
         private readonly IConfiguration _configuration;
+        private readonly IBankService _bankService;
 
         public record OverdraftRequest(string AccountNum, int Amount);
 
-        public OverdraftController(ILogger<OverdraftController> logger, IConfiguration configuration)
+        public OverdraftController(ILogger<OverdraftController> logger, IConfiguration configuration, IBankService bankService)
         {
             _logger = logger;
             _configuration = configuration;
+            _bankService = bankService;
         }
 
         [HttpGet("/version")]
@@ -92,8 +95,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
         {
             string bearerToken = GetBearerToken();
             string balancesApiAddress = _configuration[BALANCES_API_ADDR];
-            BankService service = new BankService(bearerToken);
-            return service.GetBalance(balancesApiAddress, accountNumber);
+            return _bankService.GetBalance(bearerToken, accountNumber);
         }
     }
 }
