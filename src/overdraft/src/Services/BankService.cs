@@ -8,6 +8,8 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
     /// </summary>
     public class BankService
     {
+        public record Transaction(string FromAccountNum, string FromRoutingNum, string ToAccountNum, string ToRoutingNum, int Amount, DateTime Timestamp);
+
         private string _bearerToken;
 
         public BankService(string bearerToken)
@@ -15,13 +17,13 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             _bearerToken = bearerToken;
         }
 
-        public void AddTransaction(OverdraftController.Transaction transaction)
+        public void AddTransaction(Transaction transaction)
         {
         }
 
-        public long GetBalance(string balancesApiUri, string accountNum)
+        public long GetBalance(string balancesApiAddress, string accountNum)
         {
-            string url = $"{balancesApiUri}/balances/{accountNum}";
+            string url = $"{balancesApiAddress}/balances/{accountNum}";
             string response = null;
             using(var httpClient = new HttpClient()) {
                 httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {_bearerToken}");

@@ -4,18 +4,23 @@ using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Configuration;
 
 namespace Anthos.Samples.BankOfAnthos.Overdraft
 {
     [ApiController]
     public class OverdraftController : ControllerBase
     {
+        private const string BALANCES_API_ADDR = "ServiceApi:BALANCES_API_ADDR";
         private readonly ILogger<OverdraftController> _logger;
+        private readonly IConfiguration _configuration;
+
         public record OverdraftRequest(string AccountNum, int Amount);
-        public record Transaction(string FromAccountNum, string FromRoutingNum, string ToAccountNum, string ToRoutingNum, int Amount, DateTime Timestamp);
-        public OverdraftController(ILogger<OverdraftController> logger)
+
+        public OverdraftController(ILogger<OverdraftController> logger, IConfiguration configuration)
         {
             _logger = logger;
+            _configuration = configuration;
         }
 
         [HttpGet("/version")]
@@ -35,6 +40,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
         public string Create(OverdraftRequest request)
         {
             string accountNumber = GetAccountNumber();
+            long balance = GetAccountBalance(accountNumber);
             return "ACCOUNT_" + request.AccountNum;
         }
 
@@ -52,17 +58,22 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             return "debited";
         }
 
+        private string GetBearerToken()
+        {
+            if (this.Request.Headers == null || this.Request.Headers["Authorization"].Count == 0)
+                throw new ApplicationException("No authorization header.");
+            
+            string bearerToken = this.Request.Headers["Authorization"][0];
+            bearerToken = bearerToken.Replace("Bearer", "").TrimStart();
+            
+            return bearerToken;
+        }
+
         private string GetAccountNumber()
         {
             const string claimType = "acct";
-            if (this.Request.Headers == null || this.Request.Headers["Authorization"].Count == 0)
-            {
-                _logger.Log(LogLevel.Debug, "No authorization header.");
-                return null;
-            }
-
             string accountNum = null;
-            var bearer = this.Request.Headers["Authorization"][0];
+
             var identity = HttpContext.User.Identity as ClaimsIdentity;
             if (identity != null)
             {
@@ -75,6 +86,14 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             }
             
             return accountNum;
+        }
+
+        private long GetAccountBalance(string accountNumber)
+        {
+            string bearerToken = GetBearerToken();
+            string balancesApiAddress = _configuration[BALANCES_API_ADDR];
+            BankService service = new BankService(bearerToken);
+            return service.GetBalance(balancesApiAddress, accountNumber);
         }
     }
 }

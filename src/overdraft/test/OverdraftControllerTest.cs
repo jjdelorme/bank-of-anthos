@@ -6,7 +6,8 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft.Tests
 {
     public class OverdraftControllerTest
     {
-        static OverdraftController controller = new OverdraftController(null);
+        // TODO: Mock logger & configuration objects here.
+        static OverdraftController controller = new OverdraftController(null, null);
      
         [Fact]
         public void Version()
