@@ -36,7 +36,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
         }
 
         /// <sumary>
-        /// Returns the configuration value for the service, i.e.ServiceApi:BALANCES_API_ADDR for balances.
+        /// Returns the API address from configurationfor the service, i.e. BALANCES_API_ADDR for balances.
         /// </summary>
         private string GetApiAddress(string key)
         {

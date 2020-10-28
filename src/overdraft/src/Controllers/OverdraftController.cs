@@ -8,11 +8,12 @@ using Microsoft.Extensions.Configuration;
 
 namespace Anthos.Samples.BankOfAnthos.Overdraft
 {
+    /// <summary>
+    /// Implements Web API for Overdraft protection service.
+    /// </summary>
     [ApiController]
     public class OverdraftController : ControllerBase
     {
-        private const string BALANCES_API_ADDR = "ServiceApi:BALANCES_API_ADDR";
-
         private readonly ILogger<OverdraftController> _logger;
         private readonly IConfiguration _configuration;
         private readonly IBankService _bankService;
@@ -38,6 +39,9 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             return Ok("ok");
         }
 
+        /// <summary>
+        /// Creates an overdraft account.
+        /// </summary>
         [Authorize]
         [HttpPost("/create")]
         public string Create(OverdraftRequest request)
@@ -47,6 +51,9 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             return "ACCOUNT_" + request.AccountNum;
         }
 
+        /// <summary>
+        /// Credits the overdraft account, increasing the amount the customer owes.
+        /// </summary>        
         [Authorize]
         [HttpPost("/credit")]
         public string Credit()
@@ -54,6 +61,9 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             return "credited";
         }
 
+        /// <summary>
+        /// Debits the overdraft account, decreasing (of paying off) the amount the customer owes.
+        /// </summary>        
         [Authorize]
         [HttpPost("/debit")]
         public string Debit()
@@ -93,6 +103,8 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
 
         private long GetAccountBalance(string accountNumber)
         {
+            const string BALANCES_API_ADDR = "ServiceApi:BALANCES_API_ADDR";
+            
             string bearerToken = GetBearerToken();
             string balancesApiAddress = _configuration[BALANCES_API_ADDR];
             return _bankService.GetBalance(bearerToken, accountNumber);
