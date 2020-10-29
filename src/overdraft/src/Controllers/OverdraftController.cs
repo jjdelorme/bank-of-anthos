@@ -73,8 +73,11 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
 
         private string GetBearerToken()
         {
-            if (this.Request.Headers == null || this.Request.Headers["Authorization"].Count == 0)
-                throw new ApplicationException("No authorization header.");
+            if (this.Request?.Headers == null || this.Request.Headers["Authorization"].Count == 0)
+            {
+                _logger.Log(LogLevel.Warning, "No authorization header.");
+                return null;
+            }
             
             string bearerToken = this.Request.Headers["Authorization"][0];
             bearerToken = bearerToken.Replace("Bearer", "").TrimStart();
@@ -87,7 +90,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             const string claimType = "acct";
             string accountNum = null;
 
-            var identity = HttpContext.User.Identity as ClaimsIdentity;
+            var identity = HttpContext?.User.Identity as ClaimsIdentity;
             if (identity != null)
             {
                 var accountClaim = identity.Claims.Where(c => c.Type == claimType).First();
@@ -103,10 +106,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
 
         private long GetAccountBalance(string accountNumber)
         {
-            const string BALANCES_API_ADDR = "ServiceApi:BALANCES_API_ADDR";
-            
             string bearerToken = GetBearerToken();
-            string balancesApiAddress = _configuration[BALANCES_API_ADDR];
             return _bankService.GetBalance(bearerToken, accountNumber);
         }
     }
