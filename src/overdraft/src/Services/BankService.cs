@@ -66,7 +66,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
 
             try
             {
-                tokenHandler.ValidateToken(token, Helpers.GetJwtValidationParameters(_configuration),
+                tokenHandler.ValidateToken(token, JwtHelper.GetJwtValidationParameters(_configuration),
                     out SecurityToken validatedToken);
 
                 var jwtToken = (JwtSecurityToken)validatedToken;

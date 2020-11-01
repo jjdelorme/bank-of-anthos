@@ -6,7 +6,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace Anthos.Samples.BankOfAnthos.Overdraft
 {
-    public class Helpers
+    public class JwtHelper
     {
         public static TokenValidationParameters GetJwtValidationParameters(IConfiguration configuration)
         {
