@@ -82,39 +82,8 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
                 x.RequireHttpsMetadata = false;
                 x.IncludeErrorDetails = true;
                 x.SaveToken = true;
-                x.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = GetJwtKey(),
-                    ValidateIssuer = false,
-                    ValidateAudience = false
-                };
+                x.TokenValidationParameters = Helpers.GetJwtValidationParameters(Configuration);
             });                        
-        }
-
-        private SecurityKey GetJwtKey()
-        {
-            const string JWT_SECRET_NAME = "JwtSecret";
-
-            string secret = Configuration[JWT_SECRET_NAME];
-            if (string.IsNullOrEmpty(secret))
-                throw new ApplicationException($"Missing JWT Key: {JWT_SECRET_NAME}");
-
-            byte[] bytes = Convert.FromBase64String(secret);
-            string publicKey = Encoding.UTF8.GetString(bytes);
-
-            publicKey = publicKey.Replace("-----BEGIN PUBLIC KEY-----", "");
-            publicKey = publicKey.Replace("-----END PUBLIC KEY-----", "");
-            publicKey = publicKey.Replace("\r", "");
-            publicKey = publicKey.Replace(Environment.NewLine, "");
-
-            RSA rsa = RSA.Create();
-            rsa.ImportSubjectPublicKeyInfo(
-                source: Convert.FromBase64String(publicKey),
-                bytesRead: out int _
-            );
-            
-            return new RsaSecurityKey(rsa);
         }
     }
 }

@@ -22,7 +22,6 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
 
         void AddTransaction(string bearerToken, Transaction transaction);
         long GetBalance(string bearerToken, string accountNum);
-        string GetAccountNum(string username, string password);
         string CreateUser(NewUser request);
     }
 }

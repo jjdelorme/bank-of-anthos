@@ -78,10 +78,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
                 "000-00-0000");
             
             // Create the user.
-            _bankService.CreateUser(user);
-            
-            // Authenticate as the user in order to get the account number.
-            string accountNum = _bankService.GetAccountNum(username, password);
+            string accountNum = _bankService.CreateUser(user);
 
             return accountNum;
         }
