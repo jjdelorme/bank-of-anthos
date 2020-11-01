@@ -58,13 +58,15 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
 
         private string CreateUser(IOverdraftService.OverdraftRequest request)
         {
-            const string userPrefix = "overdraft_";
+            const string userPrefix = "OD_";
             string username = userPrefix + request.Username;
             string password = Convert.ToBase64String(
                 Guid.NewGuid().ToByteArray());
 
+            int maxLength = username.Length >14 ? 14 : username.Length-1;
+
             var user = new IBankService.NewUser(
-                username,
+                username.Substring(0, maxLength),
                 password, 
                 userPrefix, 
                 request.Fullname,
