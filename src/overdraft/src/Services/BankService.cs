@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -68,15 +69,19 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
 
             var formContent = GetFormContent(request);
 
-            var myHttpClient = new HttpClient();
-            var response = myHttpClient.PostAsync(url, formContent);
-            response.Wait();
-            
-            if (response.Result.StatusCode == HttpStatusCode.Created)
-            {
-                _logger.Log(LogLevel.Information, $"Account {request.username} created.");
-                accountNum = GetAccountNum(request.username, request.password);
-            }
+            Task.Run(async () => {
+                var httpClient = new HttpClient();
+                var response = await httpClient.PostAsync(url, formContent);
+                var contents = await response.Content.ReadAsStringAsync();
+
+                var rawMessage = await response.RequestMessage.Content.ReadAsStringAsync();
+
+                if (response.StatusCode == HttpStatusCode.Created)
+                {
+                    _logger.Log(LogLevel.Information, $"Account {request.username} created.");
+                    accountNum = GetAccountNum(request.username, request.password);
+                }
+            }).Wait();
 
             return accountNum;
         }
@@ -91,9 +96,9 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             return "http://" + api;
         }
 
-        private FormUrlEncodedContent GetFormContent(IBankService.NewUser request)
+        private StringContent GetFormContent(IBankService.NewUser request)
         {
-            var formContent = new FormUrlEncodedContent(new[]
+            var formContent = new List<KeyValuePair<string, string>>()
             {
                 new KeyValuePair<string, string>("username", request.username), 
                 new KeyValuePair<string, string>("password", request.password),
@@ -106,9 +111,22 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
                 new KeyValuePair<string, string>("state", request.state),
                 new KeyValuePair<string, string>("zip", request.zip),
                 new KeyValuePair<string, string>("ssn", request.ssn)
-            });
+            };
 
-            return formContent;
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < formContent.Count; i++)
+            {
+                var kv = formContent[i];
+                sb.Append($"{kv.Key}={kv.Value}");
+                
+                if (i != (formContent.Count - 1))
+                    sb.Append("&");
+            }
+
+            StringContent content = new StringContent(sb.ToString(), UnicodeEncoding.UTF8, 
+                "application/x-www-form-urlencoded");
+
+            return content;
         }
     }
 }
