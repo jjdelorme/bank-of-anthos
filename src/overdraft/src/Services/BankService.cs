@@ -52,11 +52,19 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
         /// </returns>
         public string CreateUser(IBankService.NewUser request)
         {
-            string accountNum = null;
+            CreateUserInternal(request);           
+            string token = Login(request.username, request.password);
+            string accountNum = GetAccountFromToken(token);
+
+            return accountNum;
+        }
+
+        private void CreateUserInternal(IBankService.NewUser request)
+        {
             string apiAddress = GetApiAddress("USERSERVICE_API_ADDR");
             string url = $"{apiAddress}/users";
 
-            var formContent = GetFormContent(request);
+            var formContent = GetUserFormContent(request);
 
             var httpClient = new HttpClient();
             var response = httpClient.PostAsync(url, formContent);
@@ -64,37 +72,12 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             var contents = response.Result.Content.ReadAsStringAsync();
 
             if (response.Result.StatusCode == HttpStatusCode.Created)
-            {
                 _logger.Log(LogLevel.Information, $"Account {request.username} created.");
-                accountNum = GetAccountNum(request.username, request.password);
-            }
             else 
-            {
                 throw new ApplicationException($"Unable to create user: {contents}");
-            }
-
-            return accountNum;
         }
 
-        private string GetAccountNum(string username, string password)
-        {
-            string token = Login(username, password);
-            string accountNum = GetAccountFromToken(token);
-
-            return accountNum;
-        }
-
-        /// <summary>
-        /// Returns the API address from configurationfor the service, i.e. BALANCES_API_ADDR for balances.
-        /// </summary>
-        private string GetApiAddress(string key)
-        {
-            const string SERVICE_API_SECTION = "ServiceApi";
-            string api = _configuration[$"{SERVICE_API_SECTION}:{key}"];
-            return "http://" + api;
-        }
-
-        private StringContent GetFormContent(IBankService.NewUser request)
+        private StringContent GetUserFormContent(IBankService.NewUser request)
         {
             var formContent = new List<KeyValuePair<string, string>>()
             {
@@ -178,5 +161,15 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
                 throw new ApplicationException("Token validation failed.");
             }
         }
+
+        /// <summary>
+        /// Returns the API address from configurationfor the service, i.e. BALANCES_API_ADDR for balances.
+        /// </summary>
+        private string GetApiAddress(string key)
+        {
+            const string SERVICE_API_SECTION = "ServiceApi";
+            string api = _configuration[$"{SERVICE_API_SECTION}:{key}"];
+            return "http://" + api;
+        }        
     }
 }

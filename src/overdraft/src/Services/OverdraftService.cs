@@ -24,8 +24,8 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             if (amount > 0)
             {
                 string overdraftAccountNum = CreateUser(request);
-                SaveOverdraftAccount(overdraftAccountNum, request.AccountNum, amount);
                 DepositOverdraft(overdraftAccountNum, amount);
+                SaveOverdraftAccount(overdraftAccountNum, request.AccountNum, amount);
             }
             else
             {
