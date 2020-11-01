@@ -54,32 +54,15 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             _logger.Log(LogLevel.Information, $"Account {request.username} created.");
 
             string token = user.Login(request.username, request.password);
-            string accountNum = GetAccountFromToken(token);
+            _logger.Log(LogLevel.Debug, $"Logged in as {request.username}.");
+            
+            JwtHelper jwtHelper = new JwtHelper(_configuration);            
+            string accountNum = jwtHelper.GetAccountFromToken(token);
+
+            if (accountNum == null)
+                throw new ApplicationException($"Unable to get account number from token for {request.username}");
 
             return accountNum;
-        }
-
-        private string GetAccountFromToken(string token)
-        {
-            const string JWT_ACCOUNT_KEY = "acct";
-            var tokenHandler = new JwtSecurityTokenHandler();
-
-            try
-            {
-                tokenHandler.ValidateToken(token, JwtHelper.GetJwtValidationParameters(_configuration),
-                    out SecurityToken validatedToken);
-
-                var jwtToken = (JwtSecurityToken)validatedToken;
-                var accountNum = jwtToken.Claims.First(x => x.Type == JWT_ACCOUNT_KEY).Value;
-
-                // return account id from JWT token if validation successful
-                return accountNum;
-            }
-            catch
-            {
-                _logger.Log(LogLevel.Error, "Token validation failed.");
-                throw new ApplicationException("Token validation failed.");
-            }
         }
 
         /// <summary>

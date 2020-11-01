@@ -1,16 +1,12 @@
 using System;
-using System.Text;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using System.Security.Cryptography;
 
 namespace Anthos.Samples.BankOfAnthos.Overdraft
 {
@@ -72,6 +68,8 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
 
         private void ConfigureJwtAuth(IServiceCollection services)
         {
+            JwtHelper jwtHelper = new JwtHelper(Configuration);
+
             services.AddAuthentication(x =>
             {
                 x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -82,7 +80,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
                 x.RequireHttpsMetadata = false;
                 x.IncludeErrorDetails = true;
                 x.SaveToken = true;
-                x.TokenValidationParameters = JwtHelper.GetJwtValidationParameters(Configuration);
+                x.TokenValidationParameters = jwtHelper.GetJwtValidationParameters();
             });                        
         }
     }

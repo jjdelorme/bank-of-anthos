@@ -1,16 +1,28 @@
 using System;
 using System.Text;
+using System.Linq;
 using System.Security.Cryptography;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Configuration;
+using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace Anthos.Samples.BankOfAnthos.Overdraft
 {
     public class JwtHelper
     {
-        public static TokenValidationParameters GetJwtValidationParameters(IConfiguration configuration)
+        const string JWT_ACCOUNT_KEY = "acct";
+
+        private readonly IConfiguration _configuration;
+
+        public JwtHelper(IConfiguration configuration)
         {
-            string secret = GetJwtPublicKey(configuration);
+            _configuration = configuration;
+        }
+
+        public TokenValidationParameters GetJwtValidationParameters()
+        {
+            string secret = GetJwtPublicKey();
 
             return new TokenValidationParameters
                 {
@@ -21,18 +33,37 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
                 };
         }
 
-        private static string GetJwtPublicKey(IConfiguration configuration)
+        public string GenerateJwtToken(string accountNum)
         {
-            const string JWT_SECRET_NAME = "JwtSecret";
-            string secret = configuration[JWT_SECRET_NAME];
+            string secret = GetJwtPrivateKey();
 
-            if (string.IsNullOrEmpty(secret))
-                throw new ApplicationException($"Missing JWT Key: {JWT_SECRET_NAME}");
-            
-            return secret;
+            var tokenHandler = new JwtSecurityTokenHandler();
+
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new[] { new Claim(JWT_ACCOUNT_KEY, accountNum) }),
+                Expires = DateTime.UtcNow.AddHours(1),
+                SigningCredentials = new SigningCredentials(GetJwtKey(secret), SecurityAlgorithms.RsaSha256)
+            };
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
+        }        
+
+        public string GetAccountFromToken(string token)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+
+            tokenHandler.ValidateToken(token, GetJwtValidationParameters(),
+                out SecurityToken validatedToken);
+
+            var jwtToken = (JwtSecurityToken)validatedToken;
+            var accountNum = jwtToken.Claims.First(x => x.Type == JWT_ACCOUNT_KEY).Value;
+
+            // return account id from JWT token if validation successful
+            return accountNum;
         }
 
-        private static SecurityKey GetJwtKey(string secret)
+        private SecurityKey GetJwtKey(string secret)
         {
             byte[] bytes = Convert.FromBase64String(secret);
             string publicKey = Encoding.UTF8.GetString(bytes);
@@ -50,5 +81,24 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             
             return new RsaSecurityKey(rsa);
         }        
+
+        private string GetJwtPublicKey()
+        {
+            const string JWT_SECRET_NAME = "Jwt:PublicKey";
+            string secret = _configuration[JWT_SECRET_NAME];
+
+            if (string.IsNullOrEmpty(secret))
+                throw new ApplicationException($"Missing JWT Key: {JWT_SECRET_NAME}");
+            
+            return secret;
+        }
+
+        private string GetJwtPrivateKey()
+        {
+            const string JWT_PRIVATE_KEY = "Jwt:PrivateKey";
+            string secret = _configuration[JWT_PRIVATE_KEY];
+            
+            return secret;
+        }
     }
 }
