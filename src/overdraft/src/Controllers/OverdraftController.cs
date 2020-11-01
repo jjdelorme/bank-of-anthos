@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
+using Request = Anthos.Samples.BankOfAnthos.Overdraft.IOverdraftService.OverdraftRequest;
 
 namespace Anthos.Samples.BankOfAnthos.Overdraft
 {
@@ -16,15 +17,14 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
     {
         private readonly ILogger<OverdraftController> _logger;
         private readonly IConfiguration _configuration;
-        private readonly IBankService _bankService;
+        private readonly IOverdraftService _overdraft;
 
-        public record OverdraftRequest(string AccountNum, int Amount);
-
-        public OverdraftController(ILogger<OverdraftController> logger, IConfiguration configuration, IBankService bankService)
+        public OverdraftController(ILogger<OverdraftController> logger, 
+            IConfiguration configuration, IOverdraftService overdraft)
         {
             _logger = logger;
             _configuration = configuration;
-            _bankService = bankService;
+            _overdraft = overdraft;
         }
 
         [HttpGet("/version")]
@@ -40,15 +40,21 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
         }
 
         /// <summary>
-        /// Creates an overdraft account.
+        /// Processes overdraft application and creates account if approved.
         /// </summary>
+        /// <returns>
+        /// Overdraft limit if approved, 0 if not.
+        /// </returns>
         [Authorize]
         [HttpPost("/create")]
-        public string Create(OverdraftRequest request)
+        public IActionResult Create(Request request)
         {
-            string accountNumber = GetAccountNumber();
-            long balance = GetAccountBalance(accountNumber);
-            return "ACCOUNT_" + request.AccountNum;
+            if (!ValidateAccount(request))
+                return new UnauthorizedResult();
+
+            long amount = _overdraft.CreateOverdraftAccount(request);
+
+            return Ok(amount);
         }
 
         /// <summary>
@@ -71,9 +77,34 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             return "debited";
         }
 
+        /// <summary>
+        /// Get available overdraft balance.
+        /// </summary>        
+        [Authorize]
+        [HttpPost("/balance")]
+        public long GetBalance()
+        {
+            return 0;
+        }
+
+        private bool ValidateAccount(Request request)
+        {
+            string accountNumber = GetAccountNumber();
+            if (request.AccountNum != accountNumber)
+            {
+                _logger.Log(LogLevel.Warning, "Account does not match claim.");
+                return false;
+            }
+            else
+            {
+                return true;
+            }
+        }
+
         private string GetBearerToken()
         {
-            if (this.Request?.Headers == null || this.Request.Headers["Authorization"].Count == 0)
+            if (this.Request?.Headers == null || 
+                this.Request.Headers["Authorization"].Count == 0)
             {
                 _logger.Log(LogLevel.Warning, "No authorization header.");
                 return null;
@@ -102,12 +133,6 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             }
             
             return accountNum;
-        }
-
-        private long GetAccountBalance(string accountNumber)
-        {
-            string bearerToken = GetBearerToken();
-            return _bankService.GetBalance(bearerToken, accountNumber);
         }
     }
 }

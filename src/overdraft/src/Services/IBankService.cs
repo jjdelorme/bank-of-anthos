@@ -1,5 +1,4 @@
 using System;
-using System.Net.Http;
 
 namespace Anthos.Samples.BankOfAnthos.Overdraft
 {
@@ -8,7 +7,22 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
     /// </summary>
     public interface IBankService
     {
-        void AddTransaction(string bearerToken, BankService.Transaction transaction);
+        public record Transaction(string FromAccountNum, string FromRoutingNum, string ToAccountNum, string ToRoutingNum, int Amount, DateTime Timestamp);
+
+        public record NewUser(string username,
+            string password,
+            string firstname,
+            string lastname,
+            DateTime birthday,
+            string timezone,
+            string address,
+            string state,
+            string zip,
+            string ssn);
+
+        void AddTransaction(string bearerToken, Transaction transaction);
         long GetBalance(string bearerToken, string accountNum);
+        string GetAccountNum(string username, string password);
+        string CreateUser(NewUser request);
     }
 }

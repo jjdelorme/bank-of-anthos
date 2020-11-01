@@ -26,7 +26,10 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            // BankOfAnthos specific services used with dependency injection.
             services.AddSingleton<IBankService, BankService>();
+            services.AddScoped<IOverdraftService, OverdraftService>();
+
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
@@ -36,6 +39,35 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             });
 
             ConfigureJwtAuth(services);
+        }
+
+        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        {
+            if (env.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+                app.UseSwagger();
+                app.UseSwaggerUI(c => 
+                {
+                    c.SwaggerEndpoint("/swagger/v1/swagger.json", "overdraft v1");
+                    c.RoutePrefix = string.Empty;
+                });
+            }
+            else
+            {
+                app.UseHttpsRedirection();
+            }
+
+            app.UseRouting();
+
+            app.UseAuthentication();
+            app.UseAuthorization();
+
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+            });
         }
 
         private void ConfigureJwtAuth(IServiceCollection services)
@@ -83,35 +115,6 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             );
             
             return new RsaSecurityKey(rsa);
-        }
-
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
-        {
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-                app.UseSwagger();
-                app.UseSwaggerUI(c => 
-                {
-                    c.SwaggerEndpoint("/swagger/v1/swagger.json", "overdraft v1");
-                    c.RoutePrefix = string.Empty;
-                });
-            }
-            else
-            {
-                app.UseHttpsRedirection();
-            }
-
-            app.UseRouting();
-
-            app.UseAuthentication();
-            app.UseAuthorization();
-
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapControllers();
-            });
         }
     }
 }
