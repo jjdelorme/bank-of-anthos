@@ -48,8 +48,6 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
-import anthos.samples.bankofanthos.ledgerwriter.LedgerWriterApplication.PubsubOutboundGateway;
-
 @RestController
 public final class LedgerWriterController {
 
@@ -69,11 +67,6 @@ public final class LedgerWriterController {
     public static final String READINESS_CODE = "ok";
     public static final String UNAUTHORIZED_CODE = "not authorized";
     public static final String JWT_ACCOUNT_KEY = "acct";
-
-    // tag::autowireGateway[]
-    @Autowired
-    private PubsubOutboundGateway messagingGateway;
-    // end::autowireGateway[]
 
     @Autowired
     RestTemplate restTemplate;
@@ -105,7 +98,7 @@ public final class LedgerWriterController {
                             .expireAfterWrite(1, TimeUnit.HOURS)
                             .build();
         GuavaCacheMetrics.monitor(meterRegistry, this.cache, "Guava");
-    } 
+    }
 
     /**
      * Version endpoint.
@@ -165,7 +158,7 @@ public final class LedgerWriterController {
             // Ensure sender balance can cover transaction.
             if (transaction.getFromRoutingNum().equals(localRoutingNum)) {
                 int balance = getAvailableBalance(
-                        bearerToken, transaction.getFromAccountNum());                
+                        bearerToken, transaction.getFromAccountNum());
                 if (balance < transaction.getAmount()) {
                     LOGGER.error("Transaction submission failed: "
                         + "Insufficient balance");
@@ -179,10 +172,6 @@ public final class LedgerWriterController {
             this.cache.put(transaction.getRequestUuid(),
                     transaction.getTransactionId());
             LOGGER.info("Submitted transaction successfully");
-
-            // Publish event that tx occurred.
-            messagingGateway.sendToPubsub(transaction.toString());
-
             return new ResponseEntity<String>(READINESS_CODE,
                     HttpStatus.CREATED);
 
