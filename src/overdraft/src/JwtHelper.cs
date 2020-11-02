@@ -22,12 +22,10 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
 
         public TokenValidationParameters GetJwtValidationParameters()
         {
-            string secret = GetJwtPublicKey();
-
             return new TokenValidationParameters
                 {
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = GetJwtKey(secret),
+                    IssuerSigningKey = GetJwtPublicKey(),
                     ValidateIssuer = false,
                     ValidateAudience = false
                 };
@@ -35,15 +33,13 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
 
         public string GenerateJwtToken(string accountNum)
         {
-            string secret = GetJwtPrivateKey();
-
             var tokenHandler = new JwtSecurityTokenHandler();
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(new[] { new Claim(JWT_ACCOUNT_KEY, accountNum) }),
                 Expires = DateTime.UtcNow.AddHours(1),
-                SigningCredentials = new SigningCredentials(GetJwtKey(secret), SecurityAlgorithms.RsaSha256)
+                SigningCredentials = new SigningCredentials(GetJwtPrivateKey(), SecurityAlgorithms.RsaSha256)
             };
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
@@ -63,42 +59,61 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             return accountNum;
         }
 
-        private SecurityKey GetJwtKey(string secret)
-        {
-            byte[] bytes = Convert.FromBase64String(secret);
-            string publicKey = Encoding.UTF8.GetString(bytes);
-
-            publicKey = publicKey.Replace("-----BEGIN PUBLIC KEY-----", "");
-            publicKey = publicKey.Replace("-----END PUBLIC KEY-----", "");
-            publicKey = publicKey.Replace("\r", "");
-            publicKey = publicKey.Replace(Environment.NewLine, "");
-
-            RSA rsa = RSA.Create();
-            rsa.ImportSubjectPublicKeyInfo(
-                source: Convert.FromBase64String(publicKey),
-                bytesRead: out int _
-            );
-            
-            return new RsaSecurityKey(rsa);
-        }        
-
-        private string GetJwtPublicKey()
+        private SecurityKey GetJwtPublicKey()
         {
             const string JWT_SECRET_NAME = "Jwt:PublicKey";
             string secret = _configuration[JWT_SECRET_NAME];
 
             if (string.IsNullOrEmpty(secret))
                 throw new ApplicationException($"Missing JWT Key: {JWT_SECRET_NAME}");
+
+            byte[] bytes = Convert.FromBase64String(secret);
+            string key = Encoding.UTF8.GetString(bytes);
+            key = StripTags(key);
+
+            RSA rsa = RSA.Create();
+            rsa.ImportSubjectPublicKeyInfo(
+                source: Convert.FromBase64String(key),
+                bytesRead: out int _
+            );
             
-            return secret;
+            return new RsaSecurityKey(rsa);
         }
 
-        private string GetJwtPrivateKey()
+        private SecurityKey GetJwtPrivateKey()
         {
             const string JWT_PRIVATE_KEY = "Jwt:PrivateKey";
             string secret = _configuration[JWT_PRIVATE_KEY];
+
+            byte[] bytes = Convert.FromBase64String(secret);
+            string key = Encoding.UTF8.GetString(bytes);
+            key = StripTags(key);
+
+            RSA rsa = RSA.Create();
+            rsa.ImportRSAPrivateKey(
+                source: Convert.FromBase64String(key),
+                bytesRead: out int _
+            );
             
-            return secret;
+            return new RsaSecurityKey(rsa);
+        }
+
+        private string StripTags(string key)
+        {
+            if (key.Contains("PUBLIC KEY"))
+            {
+                key = key.Replace("-----BEGIN PUBLIC KEY-----", "");
+                key = key.Replace("-----END PUBLIC KEY-----", "");
+            }
+            else
+            {
+                key = key.Replace("-----BEGIN RSA PRIVATE KEY-----", "");
+                key = key.Replace("-----END RSA PRIVATE KEY-----", "");
+            }
+            key = key.Replace("\r", "");
+            key = key.Replace(Environment.NewLine, "");
+
+            return key;
         }
     }
 }
