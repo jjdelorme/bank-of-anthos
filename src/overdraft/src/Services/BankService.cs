@@ -1,8 +1,7 @@
 using System;
+using System.Net;
 using System.Net.Http;
-using System.Linq;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 
@@ -24,6 +23,17 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
 
         public void AddTransaction(string bearerToken, IBankService.Transaction transaction)
         {
+            string transactionsApiAddress = GetApiAddress("TRANSACTIONS_API_ADDR");
+            string url = $"{transactionsApiAddress}/transactions";           
+
+            JsonContent content = JsonContent.Create<IBankService.Transaction>(transaction);
+
+            var httpClient = new HttpClient();
+            var response = httpClient.PostAsync(url, content);
+            var contents = response.Result.Content.ReadAsStringAsync();
+
+            if (response.Result.StatusCode != HttpStatusCode.Created)
+                throw new ApplicationException($"Unable to submit transaction.");
         }
 
         public long GetBalance(string bearerToken, string accountNum)

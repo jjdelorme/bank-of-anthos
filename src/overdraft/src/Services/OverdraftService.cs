@@ -1,5 +1,6 @@
 using System;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
 
 namespace Anthos.Samples.BankOfAnthos.Overdraft
 {
@@ -10,11 +11,13 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
     {
         private readonly ILogger<OverdraftService> _logger;
         private readonly IBankService _bankService;
+        private readonly IConfiguration _configuration;
 
-        public OverdraftService(ILogger<OverdraftService> logger, IBankService bankService)
+        public OverdraftService(IConfiguration configuration, ILogger<OverdraftService> logger, IBankService bankService)
         {
             _logger = logger;
             _bankService = bankService;
+            _configuration = configuration;
         }
 
         public long CreateOverdraftAccount(IOverdraftService.OverdraftRequest request)
@@ -24,7 +27,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             if (amount > 0)
             {
                 string overdraftAccountNum = CreateUser(request);
-                DepositOverdraft(overdraftAccountNum, amount);
+                DepositOverdraft(overdraftAccountNum, request.AccountNum, amount);
                 SaveOverdraftAccount(overdraftAccountNum, request.AccountNum, amount);
             }
             else
@@ -90,9 +93,18 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             // repository.SaveOverdraftAccount(...);
         }
 
-        private void DepositOverdraft(string overdraftAccountNum, long amount)
+        private void DepositOverdraft(string overdraftAccountNum, string accountNum, long amount)
         {
-            // _bankService.AddTransaction()
+            string localRoutingNumber = _configuration["LOCAL_ROUTING_NUMBER"];
+            JwtHelper jwtHelper = new JwtHelper(_configuration);
+            string bearerToken = jwtHelper.GenerateJwtToken(overdraftAccountNum);
+
+            IBankService.Transaction transaction = new IBankService.Transaction(
+                overdraftAccountNum, accountNum, localRoutingNumber, 
+                localRoutingNumber, amount, DateTime.UtcNow
+            );
+ 
+            _bankService.AddTransaction(bearerToken, transaction);
         }
     }
 }
