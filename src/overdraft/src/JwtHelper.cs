@@ -67,9 +67,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             if (string.IsNullOrEmpty(secret))
                 throw new ApplicationException($"Missing RSA Public Key in {publicKeyPath}");
 
-            byte[] bytes = Convert.FromBase64String(secret);
-            string key = Encoding.UTF8.GetString(bytes);
-            key = StripTags(key);
+            string key = StripTags(secret);
 
             RSA rsa = RSA.Create();
             rsa.ImportSubjectPublicKeyInfo(
@@ -88,9 +86,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             if (string.IsNullOrEmpty(secret))
                 throw new ApplicationException($"Missing RSA Private Key in {privateKeyPath}");
 
-            byte[] bytes = Convert.FromBase64String(secret);
-            string key = Encoding.UTF8.GetString(bytes);
-            key = StripTags(key);
+            string key = StripTags(secret);
 
             RSA rsa = RSA.Create();
             rsa.ImportRSAPrivateKey(
