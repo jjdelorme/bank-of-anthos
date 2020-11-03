@@ -27,7 +27,7 @@ spec:
       annotations:
         sidecar.istio.io/rewriteAppHTTPProbers: "true"
     spec:
-      serviceAccountName: default
+      serviceAccountName: ksa-anthos-bank
       terminationGracePeriodSeconds: 5
       restartPolicy: Always
       containers:

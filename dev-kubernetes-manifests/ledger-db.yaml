@@ -27,7 +27,7 @@ spec:
       labels:
         app: ledger-db
     spec:
-      serviceAccountName: default
+      serviceAccountName: ksa-anthos-bank
       containers:
         - name: postgres
           image: gcr.io/bank-of-anthos/ledger-db:latest

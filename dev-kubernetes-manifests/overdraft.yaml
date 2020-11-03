@@ -30,20 +30,20 @@ spec:
       containers:
       - name: overdraft
         # this image only lives in my project repo right now.
-        image: gcr.io/jasondel-test-project/overdraft:v0.1.0
+        image: gcr.io/jasondel-test-project/overdraft:v0.0.1
         volumeMounts:
-        - name: publickey
+        - name: keys
           mountPath: "/root/.ssh"
           readOnly: true
         env:
         - name: VERSION
           value: "v0.1.0"
-        - name: PORT
-          value: "8080"
+        - name: ASPNETCORE_URLS
+          value: "http://*:8080"
         - name: Logging__LogLevel__Default
-          value: "Debug"
+          value: "Information"
         - name: PRIV_KEY_PATH
-          value: "/root/.ssh/privatekey"          
+          value: "/root/.ssh/privatekey"    
         - name: FIRESTORE_COLLECTION
           value: "OverdraftAccounts"
         envFrom:
@@ -66,10 +66,12 @@ spec:
           periodSeconds: 5
           timeoutSeconds: 10
       volumes:
-      - name: publickey
+      - name: keys
         secret:
           secretName: jwt-key
           items:
+          - key: jwtRS256.key
+            path: privatekey
           - key: jwtRS256.key.pub
             path: publickey
 ---
