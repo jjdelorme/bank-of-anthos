@@ -85,8 +85,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
         /// </summary>
         private string GetApiAddress(string key)
         {
-            const string SERVICE_API_SECTION = "ServiceApi";
-            string api = _configuration[$"{SERVICE_API_SECTION}:{key}"];
+            string api = _configuration[key];
             return "http://" + api;
         }        
     }
