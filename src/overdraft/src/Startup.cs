@@ -25,6 +25,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             // BankOfAnthos specific services used with dependency injection.
             services.AddSingleton<IBankService, BankService>();
             services.AddScoped<IOverdraftService, OverdraftService>();
+            services.AddScoped<IOverdraftRepository, FirestoreOverdraftRepository>();
 
             services.AddControllers();
             services.AddSwaggerGen(c =>

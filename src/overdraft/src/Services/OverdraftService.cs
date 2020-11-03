@@ -12,30 +12,35 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
         private readonly ILogger<OverdraftService> _logger;
         private readonly IBankService _bankService;
         private readonly IConfiguration _configuration;
+        private readonly IOverdraftRepository _repository;
 
-        public OverdraftService(IConfiguration configuration, ILogger<OverdraftService> logger, IBankService bankService)
+        public OverdraftService(IConfiguration configuration, ILogger<OverdraftService> logger, 
+            IBankService bankService, IOverdraftRepository repository)
         {
             _logger = logger;
             _bankService = bankService;
             _configuration = configuration;
+            _repository = repository;
         }
 
         public long CreateOverdraftAccount(IOverdraftService.OverdraftRequest request)
         {
-            long amount = GetApprovalAmount(request);
+            OverdraftAccount account = new OverdraftAccount();
+            account.AccountNum = request.AccountNum;
+            account.Amount = GetApprovalAmount(request);
             
-            if (amount > 0)
+            if (account.Amount > 0)
             {
-                string overdraftAccountNum = CreateUser(request);
-                DepositOverdraft(overdraftAccountNum, amount);
-                SaveOverdraftAccount(overdraftAccountNum, request.AccountNum, amount);
+                account.OverdraftAccountNum = CreateUser(request);
+                DepositOverdraft(account.OverdraftAccountNum, account.Amount);
+                _repository.AddAsync(account).Wait();
             }
             else
             {
                 _logger.Log(LogLevel.Information, $"Account {request.AccountNum} not approved for overdraft.");
             }
 
-            return amount;
+            return account.Amount;
         }
 
         protected virtual long GetApprovalAmount(IOverdraftService.OverdraftRequest request)
@@ -83,13 +88,6 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             string accountNum = _bankService.CreateUser(user);
 
             return accountNum;
-        }
-
-        private void SaveOverdraftAccount(string overdraftAccountNum,
-            string accountNum, long overdraftLimit)
-        {
-            // this should probably be something like:
-            // repository.SaveOverdraftAccount(...);
         }
 
         private void DepositOverdraft(string overdraftAccountNum, long amount)
