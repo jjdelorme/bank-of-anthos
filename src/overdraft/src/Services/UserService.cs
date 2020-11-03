@@ -57,9 +57,9 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             return token;           
         }
 
-        private StringContent GetUserFormContent(IBankService.NewUser request)
+        private FormUrlEncodedContent GetUserFormContent(IBankService.NewUser request)
         {
-            var formContent = new List<KeyValuePair<string, string>>()
+            var form = new List<KeyValuePair<string, string>>()
             {
                 new KeyValuePair<string, string>("username", request.username), 
                 new KeyValuePair<string, string>("password", request.password),
@@ -74,21 +74,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
                 new KeyValuePair<string, string>("ssn", request.ssn)
             };
 
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < formContent.Count; i++)
-            {
-                var kv = formContent[i];
-                sb.Append($"{kv.Key}={kv.Value}");
-                
-                if (i != (formContent.Count - 1))
-                    sb.Append("&");
-            }
-
-            // TODO: test this with FormUrlEncodedContent should be a better fit?
-            StringContent content = new StringContent(sb.ToString(), UnicodeEncoding.UTF8, 
-                "application/x-www-form-urlencoded");
-
-            return content;
+            return new FormUrlEncodedContent(form);
         }
     }
 }
