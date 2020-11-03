@@ -7,7 +7,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
     /// </summary>
     public interface IBankService
     {
-        public record Transaction(string FromAccountNum, string FromRoutingNum, string ToAccountNum, string ToRoutingNum, long Amount, DateTime Timestamp);
+        public record Transaction(Guid Uuid, string FromAccountNum, string FromRoutingNum, string ToAccountNum, string ToRoutingNum, long Amount, DateTime Timestamp);
 
         public record NewUser(string username,
             string password,

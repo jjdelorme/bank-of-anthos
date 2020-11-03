@@ -27,7 +27,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             if (amount > 0)
             {
                 string overdraftAccountNum = CreateUser(request);
-                DepositOverdraft(overdraftAccountNum, request.AccountNum, amount);
+                DepositOverdraft(overdraftAccountNum, amount);
                 SaveOverdraftAccount(overdraftAccountNum, request.AccountNum, amount);
             }
             else
@@ -63,10 +63,9 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
         {
             const string userPrefix = "OD_";
             string username = userPrefix + request.Username;
-            string password = Convert.ToBase64String(
-                Guid.NewGuid().ToByteArray());
+            string password = "overdraft";
 
-            int maxLength = username.Length >14 ? 14 : username.Length-1;
+            int maxLength = username.Length >=14 ? 14 : username.Length-1;
 
             var user = new IBankService.NewUser(
                 username.Substring(0, maxLength),
@@ -93,14 +92,18 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             // repository.SaveOverdraftAccount(...);
         }
 
-        private void DepositOverdraft(string overdraftAccountNum, string accountNum, long amount)
+        private void DepositOverdraft(string overdraftAccountNum, long amount)
         {
+            const string OVERDRAFT_ROUTING_NUM = "883745001";
+            const string OVERDRAFT_ACCOUNT_NUM = "1099990101";
+            
             string localRoutingNumber = _configuration["LOCAL_ROUTING_NUMBER"];
+
             JwtHelper jwtHelper = new JwtHelper(_configuration);
             string bearerToken = jwtHelper.GenerateJwtToken(overdraftAccountNum);
 
-            IBankService.Transaction transaction = new IBankService.Transaction(
-                overdraftAccountNum, accountNum, localRoutingNumber, 
+            IBankService.Transaction transaction = new IBankService.Transaction(Guid.NewGuid(),
+                OVERDRAFT_ACCOUNT_NUM, OVERDRAFT_ROUTING_NUM, overdraftAccountNum, 
                 localRoutingNumber, amount, DateTime.UtcNow
             );
  

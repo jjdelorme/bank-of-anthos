@@ -29,11 +29,14 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             JsonContent content = JsonContent.Create<IBankService.Transaction>(transaction);
 
             var httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {bearerToken}");
             var response = httpClient.PostAsync(url, content);
             var contents = response.Result.Content.ReadAsStringAsync();
+            
+            _logger.Log(LogLevel.Debug, $"Transaction response: {contents}");
 
             if (response.Result.StatusCode != HttpStatusCode.Created)
-                throw new ApplicationException($"Unable to submit transaction.");
+                throw new ApplicationException($"Unable to submit transaction: {contents}");
         }
 
         public long GetBalance(string bearerToken, string accountNum)
