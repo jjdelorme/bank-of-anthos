@@ -13,7 +13,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
     [FirestoreData]
     public class OverdraftAccount
     {
-        [FirestoreDocumentId]
+        [FirestoreProperty]
         public string AccountNum { get; set; }
         
         [FirestoreProperty]

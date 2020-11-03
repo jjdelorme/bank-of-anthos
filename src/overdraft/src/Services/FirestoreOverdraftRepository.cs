@@ -22,7 +22,8 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
 
         public Task AddAsync(OverdraftAccount account)
         {
-            return _db.Collection(_collectionName).AddAsync(account);
+            var docRef = _db.Collection(_collectionName).Document(account.AccountNum);
+            return docRef.SetAsync(account);
         }
 
         public async Task<OverdraftAccount> GetAsync(string accountNum)
