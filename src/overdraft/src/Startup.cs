@@ -82,7 +82,9 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
                 x.IncludeErrorDetails = true;
                 x.SaveToken = true;
                 x.TokenValidationParameters = jwtHelper.GetJwtValidationParameters();
-            });                        
+            });         
+
+            services.AddHttpClient<IBankService, BankService>();               
         }
     }
 }

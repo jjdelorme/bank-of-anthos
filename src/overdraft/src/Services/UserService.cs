@@ -9,14 +9,16 @@ using System.Collections.Generic;
 namespace Anthos.Samples.BankOfAnthos.Overdraft
 {
     /// <summary>
-    /// Wraps calls to the bank user service.
+    /// Helper class to wraps calls to the bank's user service.
     /// </summary>
     public class UserService
     {
+        private readonly HttpClient _httpClient;
         private readonly string _apiAddress;
 
-        public UserService(string baseApiAddress)
+        public UserService(HttpClient httpClient, string baseApiAddress)
         {
+            _httpClient = httpClient;
             _apiAddress = baseApiAddress;
         }
 
@@ -26,30 +28,28 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
 
             var formContent = GetUserFormContent(request);
 
-            var httpClient = new HttpClient();
-            var response = await httpClient.PostAsync(url, formContent);
-            var contents = response.Content.ReadAsStringAsync();
+            var response = await _httpClient.PostAsync(url, formContent);
+            var content = await response.Content.ReadAsStringAsync();
 
-            if (response.StatusCode != HttpStatusCode.Created)
-                throw new ApplicationException($"Unable to create user: {contents}");
+            if (!response.IsSuccessStatusCode)
+                throw new ApplicationException($"Unable to create user: {content}");
         }
 
         public async Task<string> LoginAsync(string username, string password)
         {
-            string token = null;
+            const string TOKEN_PROPERTY = "token";
             string url = $"{_apiAddress}/login";
 
             UriBuilder uriBuilder = new UriBuilder(url);
             uriBuilder.Query = $"username={username}&password={password}";
             Uri uri = uriBuilder.Uri;
           
-            HttpClient client = new HttpClient();
-            var response = await client.GetAsync(uri);
-            if (response.StatusCode != HttpStatusCode.OK)
-                throw new ApplicationException($"Unable to get token {token}");
+            var response = await _httpClient.GetAsync(uri);
+            if (!response.IsSuccessStatusCode)
+                throw new ApplicationException($"Unable to get token for {username}");
 
             var doc = JsonDocument.Parse(response.Content.ReadAsStream());
-            token = doc.RootElement.GetProperty("token").GetString();
+            string token = doc.RootElement.GetProperty(TOKEN_PROPERTY).GetString();
 
             if (token == null)
                 throw new ApplicationException("Unable to get token.");

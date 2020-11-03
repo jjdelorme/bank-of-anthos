@@ -1,5 +1,4 @@
 using System;
-using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
@@ -13,14 +12,16 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
     /// </summary>
     public class BankService : IBankService
     {
-        private static HttpClient _httpClient = new HttpClient();
         private readonly IConfiguration _configuration;
         private readonly ILogger<BankService> _logger;
+        private readonly HttpClient _httpClient;
 
-        public BankService(IConfiguration configuration, ILogger<BankService> logger)
+        public BankService(IConfiguration configuration, ILogger<BankService> logger, HttpClient httpClient)
         {
             _configuration = configuration;
             _logger = logger;
+            _httpClient = httpClient;
+            _httpClient.DefaultRequestHeaders.Clear();
         }
 
         public async Task AddTransactionAsync(string bearerToken, IBankService.Transaction transaction)
@@ -28,7 +29,6 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             string transactionsApiAddress = GetApiAddress("TRANSACTIONS_API_ADDR");
             string url = $"{transactionsApiAddress}/transactions";           
 
-            _httpClient.DefaultRequestHeaders.Clear();
             _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {bearerToken}");
             var response = await _httpClient.PostAsJsonAsync(url, transaction);
             var content = await response.Content.ReadAsStringAsync();
@@ -44,7 +44,6 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             string balancesApiAddress = GetApiAddress("BALANCES_API_ADDR");
             string url = $"{balancesApiAddress}/balances/{accountNum}";
 
-            _httpClient.DefaultRequestHeaders.Clear();
             _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {bearerToken}");
             var response = await _httpClient.GetAsync(url);
             var content = await response.Content.ReadAsStringAsync();
@@ -63,12 +62,13 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
         /// </returns>
         public async Task<string> CreateUserAsync(IBankService.NewUser request)
         {
-            string apiAddress = GetApiAddress("USERSERVICE_API_ADDR");
-            UserService user = new UserService(apiAddress);
+            UserService user = new UserService(_httpClient, GetApiAddress("USERSERVICE_API_ADDR"));
             await user.CreateUserAsync(request); 
+
             _logger.Log(LogLevel.Information, $"Account {request.username} created.");
 
             string token = await user.LoginAsync(request.username, request.password);
+
             _logger.Log(LogLevel.Debug, $"Logged in as {request.username}.");
             
             JwtHelper jwtHelper = new JwtHelper(_configuration);            
