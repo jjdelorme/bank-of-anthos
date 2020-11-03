@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 
@@ -13,6 +14,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
         private readonly IBankService _bankService;
         private readonly IConfiguration _configuration;
         private readonly IOverdraftRepository _repository;
+        private readonly JwtHelper _jwtHelper;
 
         public OverdraftService(IConfiguration configuration, ILogger<OverdraftService> logger, 
             IBankService bankService, IOverdraftRepository repository)
@@ -21,6 +23,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             _bankService = bankService;
             _configuration = configuration;
             _repository = repository;
+            _jwtHelper = new JwtHelper(_configuration);
         }
 
         public long CreateOverdraftAccount(IOverdraftService.OverdraftRequest request)
@@ -41,6 +44,16 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             }
 
             return account.Amount;
+        }
+
+        public async Task<long> GetOverdraftBalanceAsync(string accountNum)
+        {
+            OverdraftAccount account = await _repository.GetAsync(accountNum);
+            
+            string bearerToken = _jwtHelper.GenerateJwtToken(account.OverdraftAccountNum);
+            long balance = _bankService.GetBalance(bearerToken, account.OverdraftAccountNum);
+            
+            return balance;
         }
 
         protected virtual long GetApprovalAmount(IOverdraftService.OverdraftRequest request)
@@ -96,9 +109,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             const string OVERDRAFT_ACCOUNT_NUM = "1099990101";
             
             string localRoutingNumber = _configuration["LOCAL_ROUTING_NUMBER"];
-
-            JwtHelper jwtHelper = new JwtHelper(_configuration);
-            string bearerToken = jwtHelper.GenerateJwtToken(overdraftAccountNum);
+            string bearerToken = _jwtHelper.GenerateJwtToken(overdraftAccountNum);
 
             IBankService.Transaction transaction = new IBankService.Transaction(Guid.NewGuid(),
                 OVERDRAFT_ACCOUNT_NUM, OVERDRAFT_ROUTING_NUM, overdraftAccountNum, 

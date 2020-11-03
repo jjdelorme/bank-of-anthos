@@ -81,10 +81,13 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
         /// Get available overdraft balance.
         /// </summary>        
         [Authorize]
-        [HttpPost("/balance")]
+        [HttpGet("/balance")]
         public long GetBalance()
         {
-            return 0;
+            string accountNum = GetAccountNumber();
+            var task = _overdraft.GetOverdraftBalanceAsync(accountNum);
+            task.Wait();
+            return task.Result;
         }
 
         private bool ValidateAccount(Request request)

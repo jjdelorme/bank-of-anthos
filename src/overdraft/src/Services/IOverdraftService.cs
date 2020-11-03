@@ -1,5 +1,5 @@
 using System;
-using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace Anthos.Samples.BankOfAnthos.Overdraft
 {
@@ -18,5 +18,10 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
         /// Overdraft amount or 0 if not qualified.
         /// </returns>
         long CreateOverdraftAccount(OverdraftRequest request);
+
+        /// <summary>
+        /// Gets the current overdraft balance.
+        /// </summary>
+        Task<long> GetOverdraftBalanceAsync(string accountNum);
     }
 }
