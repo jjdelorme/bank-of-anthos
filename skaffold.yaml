@@ -16,27 +16,29 @@ apiVersion: skaffold/v2alpha4
 kind: Config
 build:
   artifacts:
-  - image: gcr.io/jasondel-test-project/frontend
+  - image: gcr.io/bank-of-anthos/frontend
     context: src/frontend
-  - image: gcr.io/jasondel-test-project/ledgerwriter
+  - image: gcr.io/bank-of-anthos/ledgerwriter
     jib:
       project: src/ledgerwriter
-  - image: gcr.io/jasondel-test-project/balancereader
+  - image: gcr.io/bank-of-anthos/balancereader
     jib:
       project: src/balancereader
-  - image: gcr.io/jasondel-test-project/transactionhistory
+  - image: gcr.io/bank-of-anthos/transactionhistory
     jib:
       project: src/transactionhistory
-  - image: gcr.io/jasondel-test-project/contacts
+  - image: gcr.io/bank-of-anthos/contacts
     context: src/contacts
-  - image: gcr.io/jasondel-test-project/userservice
+  - image: gcr.io/bank-of-anthos/userservice
     context: src/userservice
-  - image: gcr.io/jasondel-test-project/loadgenerator
+  - image: gcr.io/bank-of-anthos/loadgenerator
     context: src/loadgenerator
-  - image: gcr.io/jasondel-test-project/accounts-db
+  - image: gcr.io/bank-of-anthos/accounts-db
     context: src/accounts-db
-  - image: gcr.io/jasondel-test-project/ledger-db
+  - image: gcr.io/bank-of-anthos/ledger-db
     context: src/ledger-db
+  - image: gcr.io/jasondel-test-project/overdraft
+    context: src/overdraft
   tagPolicy:
     gitCommit: {}
   local:
