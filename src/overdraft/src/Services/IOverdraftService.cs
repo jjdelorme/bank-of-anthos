@@ -23,5 +23,8 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
         /// Gets the current overdraft balance.
         /// </summary>
         Task<long> GetOverdraftBalanceAsync(string accountNum);
+
+        Task CreditAsync(string accountNum, long amount);
+        Task DebitAsync(string accountNum, long amount);
     }
 }

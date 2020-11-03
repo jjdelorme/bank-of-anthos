@@ -69,9 +69,18 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
         /// </summary>        
         [Authorize]
         [HttpPost("/credit")]
-        public string Credit()
+        public async Task<IActionResult> Credit([FromBody]long amount)
         {
-            return "credited";
+            string accountNum = GetAccountNumber();
+            try
+            {
+                await _overdraft.CreditAsync(accountNum, amount);
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
         }
 
         /// <summary>
@@ -79,9 +88,18 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
         /// </summary>        
         [Authorize]
         [HttpPost("/debit")]
-        public string Debit()
+        public async Task<IActionResult> Debit([FromBody]long amount)
         {
-            return "debited";
+            string accountNum = GetAccountNumber();
+            try
+            {
+                await _overdraft.DebitAsync(accountNum, amount);
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
         }
 
         /// <summary>

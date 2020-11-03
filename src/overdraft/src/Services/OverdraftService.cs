@@ -15,7 +15,8 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
         private readonly IConfiguration _configuration;
         private readonly IOverdraftRepository _repository;
         private readonly JwtHelper _jwtHelper;
-
+        private readonly string _localRoutingNumber;
+            
         public OverdraftService(IConfiguration configuration, ILogger<OverdraftService> logger, 
             IBankService bankService, IOverdraftRepository repository)
         {
@@ -24,6 +25,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             _configuration = configuration;
             _repository = repository;
             _jwtHelper = new JwtHelper(_configuration);
+            _localRoutingNumber = _configuration["LOCAL_ROUTING_NUMBER"];
         }
 
         public async Task<long> CreateOverdraftAccountAsync(IOverdraftService.OverdraftRequest request)
@@ -36,8 +38,10 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
                 throw new ApplicationException($"Account {request.AccountNum} not approved for overdraft.");
 
             account.OverdraftAccountNum = await CreateUserAsync(request);
+            string bearerToken = _jwtHelper.GenerateJwtToken(account.OverdraftAccountNum);
+            
             await Task.WhenAll(
-                DepositOverdraft(account.OverdraftAccountNum, account.Amount),
+                SeedOverdraftAsync(bearerToken, account.OverdraftAccountNum, account.Amount),
                 _repository.AddAsync(account)
             );
             
@@ -52,6 +56,51 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             
             return balance;
         }
+
+        /// <summary>
+        /// Moves money from overdraft account to customer account.
+        /// </summary>
+        public async Task CreditAsync(string accountNum, long amount)
+        {
+            OverdraftAccount account = await _repository.GetAsync(accountNum);   
+            string bearerToken = _jwtHelper.GenerateJwtToken(account.OverdraftAccountNum);
+
+            IBankService.Transaction transaction = new IBankService.Transaction(Guid.NewGuid(),
+                account.OverdraftAccountNum, _localRoutingNumber, accountNum, 
+                _localRoutingNumber, amount, DateTime.UtcNow
+            );
+ 
+            await _bankService.AddTransactionAsync(bearerToken, transaction);
+        }
+
+        /// <summary>
+        /// Moves money from customer account to overdraft account.
+        /// </summary>
+        public async Task DebitAsync(string accountNum, long amount)
+        {
+            OverdraftAccount account = await _repository.GetAsync(accountNum);   
+            string bearerToken = _jwtHelper.GenerateJwtToken(accountNum);
+
+            IBankService.Transaction transaction = new IBankService.Transaction(Guid.NewGuid(),
+                accountNum, _localRoutingNumber, account.OverdraftAccountNum, _localRoutingNumber,
+                amount, DateTime.UtcNow
+            );
+            
+            await _bankService.AddTransactionAsync(bearerToken, transaction);
+        }
+
+        private Task SeedOverdraftAsync(string bearerToken, string accountNum, long amount)
+        {
+            const string OVERDRAFT_SOURCE_ROUTING_NUM = "883745001";
+            const string OVERDRAFT_SOURCE_ACCOUNT_NUM = "1099990101";
+                        
+            IBankService.Transaction transaction = new IBankService.Transaction(Guid.NewGuid(),
+                OVERDRAFT_SOURCE_ACCOUNT_NUM, OVERDRAFT_SOURCE_ROUTING_NUM, accountNum, 
+                _localRoutingNumber, amount, DateTime.UtcNow
+            );
+ 
+            return _bankService.AddTransactionAsync(bearerToken, transaction);
+        }        
 
         protected virtual long GetApprovalAmount(IOverdraftService.OverdraftRequest request)
         {
@@ -74,7 +123,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             return approvalAmount;
         }
 
-        private async Task<string> CreateUserAsync(IOverdraftService.OverdraftRequest request)
+        private Task<string> CreateUserAsync(IOverdraftService.OverdraftRequest request)
         {
             const string userPrefix = "OD_";
             string username = userPrefix + request.Username;
@@ -95,25 +144,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
                 "000-00-0000");
             
             // Create the user.
-            string accountNum = await _bankService.CreateUserAsync(user);
-
-            return accountNum;
-        }
-
-        private Task DepositOverdraft(string overdraftAccountNum, long amount)
-        {
-            const string OVERDRAFT_ROUTING_NUM = "883745001";
-            const string OVERDRAFT_ACCOUNT_NUM = "1099990101";
-            
-            string localRoutingNumber = _configuration["LOCAL_ROUTING_NUMBER"];
-            string bearerToken = _jwtHelper.GenerateJwtToken(overdraftAccountNum);
-
-            IBankService.Transaction transaction = new IBankService.Transaction(Guid.NewGuid(),
-                OVERDRAFT_ACCOUNT_NUM, OVERDRAFT_ROUTING_NUM, overdraftAccountNum, 
-                localRoutingNumber, amount, DateTime.UtcNow
-            );
- 
-            return _bankService.AddTransactionAsync(bearerToken, transaction);
+            return _bankService.CreateUserAsync(user);
         }
     }
 }
