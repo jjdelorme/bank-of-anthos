@@ -17,7 +17,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
         /// <returns>
         /// Overdraft amount or 0 if not qualified.
         /// </returns>
-        long CreateOverdraftAccount(OverdraftRequest request);
+        Task<long> CreateOverdraftAccountAsync(OverdraftRequest request);
 
         /// <summary>
         /// Gets the current overdraft balance.

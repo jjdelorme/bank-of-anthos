@@ -1,5 +1,6 @@
 using System;
 using System.Security.Claims;
+using System.Threading.Tasks;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -28,13 +29,13 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
         }
 
         [HttpGet("/version")]
-        public Version Version()
+        public ActionResult<Version> Version()
         {
-            return typeof(OverdraftController).Assembly.GetName().Version;
+            return Ok(typeof(OverdraftController).Assembly.GetName().Version);
         }
 
         [HttpGet("/ready")]
-        public IActionResult Ready()
+        public ActionResult<string> Ready()
         {
             return Ok("ok");
         }
@@ -47,14 +48,20 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
         /// </returns>
         [Authorize]
         [HttpPost("/create")]
-        public IActionResult Create(Request request)
+        public async Task<IActionResult> Create(Request request)
         {
-            if (!ValidateAccount(request))
+            if (!ValidateAccount(request.AccountNum))
                 return new UnauthorizedResult();
 
-            long amount = _overdraft.CreateOverdraftAccount(request);
-
-            return Ok(amount);
+            try
+            {
+                long amount = await _overdraft.CreateOverdraftAccountAsync(request);
+                return Ok(amount);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
         }
 
         /// <summary>
@@ -81,42 +88,35 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
         /// Get available overdraft balance.
         /// </summary>        
         [Authorize]
-        [HttpGet("/balance")]
-        public long GetBalance()
+        [HttpGet("/balance/{accountNum}")]
+        public async Task<ActionResult<long>> GetBalance(string accountNum)
         {
-            string accountNum = GetAccountNumber();
-            var task = _overdraft.GetOverdraftBalanceAsync(accountNum);
-            task.Wait();
-            return task.Result;
+            if (!ValidateAccount(accountNum))
+                return new UnauthorizedResult();
+
+            try
+            {
+                long balance = await _overdraft.GetOverdraftBalanceAsync(accountNum);
+                return Ok(balance);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
         }
 
-        private bool ValidateAccount(Request request)
+        private bool ValidateAccount(string accountNumber)
         {
-            string accountNumber = GetAccountNumber();
-            if (request.AccountNum != accountNumber)
+            string jwtAccountNumber = GetAccountNumber();
+            if (jwtAccountNumber != accountNumber)
             {
-                _logger.Log(LogLevel.Warning, "Account does not match claim.");
+                _logger.Log(LogLevel.Warning, $"Account {accountNumber} does not match claim acct:{jwtAccountNumber}.");
                 return false;
             }
             else
             {
                 return true;
             }
-        }
-
-        private string GetBearerToken()
-        {
-            if (this.Request?.Headers == null || 
-                this.Request.Headers["Authorization"].Count == 0)
-            {
-                _logger.Log(LogLevel.Warning, "No authorization header.");
-                return null;
-            }
-            
-            string bearerToken = this.Request.Headers["Authorization"][0];
-            bearerToken = bearerToken.Replace("Bearer", "").TrimStart();
-            
-            return bearerToken;
         }
 
         private string GetAccountNumber()

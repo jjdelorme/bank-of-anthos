@@ -1,6 +1,7 @@
 using System;
 using System.Text;
 using System.Text.Json;
+using System.Threading.Tasks;
 using System.Net;
 using System.Net.Http;
 using System.Collections.Generic;
@@ -19,22 +20,21 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             _apiAddress = baseApiAddress;
         }
 
-        public void CreateUser(IBankService.NewUser request)
+        public async Task CreateUserAsync(IBankService.NewUser request)
         {
             string url = $"{_apiAddress}/users";
 
             var formContent = GetUserFormContent(request);
 
             var httpClient = new HttpClient();
-            var response = httpClient.PostAsync(url, formContent);
-            response.Wait();
-            var contents = response.Result.Content.ReadAsStringAsync();
+            var response = await httpClient.PostAsync(url, formContent);
+            var contents = response.Content.ReadAsStringAsync();
 
-            if (response.Result.StatusCode != HttpStatusCode.Created)
+            if (response.StatusCode != HttpStatusCode.Created)
                 throw new ApplicationException($"Unable to create user: {contents}");
         }
 
-        public string Login(string username, string password)
+        public async Task<string> LoginAsync(string username, string password)
         {
             string token = null;
             string url = $"{_apiAddress}/login";
@@ -44,12 +44,11 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             Uri uri = uriBuilder.Uri;
           
             HttpClient client = new HttpClient();
-            var response = client.GetAsync(uri);
-            response.Wait();
-            if (response.Result.StatusCode != HttpStatusCode.OK)
+            var response = await client.GetAsync(uri);
+            if (response.StatusCode != HttpStatusCode.OK)
                 throw new ApplicationException($"Unable to get token {token}");
 
-            var doc = JsonDocument.Parse(response.Result.Content.ReadAsStream());
+            var doc = JsonDocument.Parse(response.Content.ReadAsStream());
             token = doc.RootElement.GetProperty("token").GetString();
 
             if (token == null)
@@ -85,6 +84,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
                     sb.Append("&");
             }
 
+            // TODO: test this with FormUrlEncodedContent should be a better fit?
             StringContent content = new StringContent(sb.ToString(), UnicodeEncoding.UTF8, 
                 "application/x-www-form-urlencoded");
 

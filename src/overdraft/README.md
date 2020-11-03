@@ -19,3 +19,11 @@ Ensure you have a launch.json file configured (.vscode directory) which contains
             },
             ...
 ```
+
+To run the project locally you need access to the following services.  Use kubectl to forward them locally:
+
+```bash
+kubectl port-forward service/ledgerwriter 8080:8080 &
+kubectl port-forward service/balancereader 8081:8080 &
+kubectl port-forward service/userservice 8084:8080 &
+```

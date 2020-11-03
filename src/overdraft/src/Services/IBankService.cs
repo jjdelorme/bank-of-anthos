@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 
 namespace Anthos.Samples.BankOfAnthos.Overdraft
 {
@@ -20,8 +21,8 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             string zip,
             string ssn);
 
-        void AddTransaction(string bearerToken, Transaction transaction);
-        long GetBalance(string bearerToken, string accountNum);
-        string CreateUser(NewUser request);
+        Task AddTransactionAsync(string bearerToken, Transaction transaction);
+        Task<long> GetBalanceAsync(string bearerToken, string accountNum);
+        Task<string> CreateUserAsync(NewUser request);
     }
 }

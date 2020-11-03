@@ -2,6 +2,7 @@ using System;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 
@@ -12,6 +13,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
     /// </summary>
     public class BankService : IBankService
     {
+        private static HttpClient _httpClient = new HttpClient();
         private readonly IConfiguration _configuration;
         private readonly ILogger<BankService> _logger;
 
@@ -21,35 +23,36 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             _logger = logger;
         }
 
-        public void AddTransaction(string bearerToken, IBankService.Transaction transaction)
+        public async Task AddTransactionAsync(string bearerToken, IBankService.Transaction transaction)
         {
             string transactionsApiAddress = GetApiAddress("TRANSACTIONS_API_ADDR");
             string url = $"{transactionsApiAddress}/transactions";           
 
-            JsonContent content = JsonContent.Create<IBankService.Transaction>(transaction);
-
-            var httpClient = new HttpClient();
-            httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {bearerToken}");
-            var response = httpClient.PostAsync(url, content);
-            var contents = response.Result.Content.ReadAsStringAsync();
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {bearerToken}");
+            var response = await _httpClient.PostAsJsonAsync(url, transaction);
+            var content = await response.Content.ReadAsStringAsync();
             
-            _logger.Log(LogLevel.Debug, $"Transaction response: {contents}");
+            _logger.Log(LogLevel.Debug, $"Transaction response: {content}");
 
-            if (response.Result.StatusCode != HttpStatusCode.Created)
-                throw new ApplicationException($"Unable to submit transaction: {contents}");
+            if (!response.IsSuccessStatusCode)
+                throw new ApplicationException($"Unable to submit transaction: {content}");
         }
 
-        public long GetBalance(string bearerToken, string accountNum)
+        public async Task<long> GetBalanceAsync(string bearerToken, string accountNum)
         {
             string balancesApiAddress = GetApiAddress("BALANCES_API_ADDR");
             string url = $"{balancesApiAddress}/balances/{accountNum}";
-            string response = null;
-            using(var httpClient = new HttpClient()) {
-                httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {bearerToken}");
-                response = httpClient.GetStringAsync(new Uri(url)).Result;
-            }
 
-            return long.Parse(response);
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {bearerToken}");
+            var response = await _httpClient.GetAsync(url);
+            var content = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+                throw new ApplicationException($"Unable to get balance: {content}");            
+
+            return long.Parse(content);
         }
 
         /// <summary>
@@ -58,15 +61,14 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
         /// <returns>
         /// AccountNum
         /// </returns>
-        public string CreateUser(IBankService.NewUser request)
+        public async Task<string> CreateUserAsync(IBankService.NewUser request)
         {
             string apiAddress = GetApiAddress("USERSERVICE_API_ADDR");
             UserService user = new UserService(apiAddress);
-
-            user.CreateUser(request);     
+            await user.CreateUserAsync(request); 
             _logger.Log(LogLevel.Information, $"Account {request.username} created.");
 
-            string token = user.Login(request.username, request.password);
+            string token = await user.LoginAsync(request.username, request.password);
             _logger.Log(LogLevel.Debug, $"Logged in as {request.username}.");
             
             JwtHelper jwtHelper = new JwtHelper(_configuration);            

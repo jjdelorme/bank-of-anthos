@@ -26,32 +26,29 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             _jwtHelper = new JwtHelper(_configuration);
         }
 
-        public long CreateOverdraftAccount(IOverdraftService.OverdraftRequest request)
+        public async Task<long> CreateOverdraftAccountAsync(IOverdraftService.OverdraftRequest request)
         {
             OverdraftAccount account = new OverdraftAccount();
             account.AccountNum = request.AccountNum;
             account.Amount = GetApprovalAmount(request);
             
-            if (account.Amount > 0)
-            {
-                account.OverdraftAccountNum = CreateUser(request);
-                DepositOverdraft(account.OverdraftAccountNum, account.Amount);
-                _repository.AddAsync(account).Wait();
-            }
-            else
-            {
-                _logger.Log(LogLevel.Information, $"Account {request.AccountNum} not approved for overdraft.");
-            }
+            if (account.Amount <= 0)
+                throw new ApplicationException($"Account {request.AccountNum} not approved for overdraft.");
 
+            account.OverdraftAccountNum = await CreateUserAsync(request);
+            await Task.WhenAll(
+                DepositOverdraft(account.OverdraftAccountNum, account.Amount),
+                _repository.AddAsync(account)
+            );
+            
             return account.Amount;
         }
 
         public async Task<long> GetOverdraftBalanceAsync(string accountNum)
         {
-            OverdraftAccount account = await _repository.GetAsync(accountNum);
-            
+            OverdraftAccount account = await _repository.GetAsync(accountNum);            
             string bearerToken = _jwtHelper.GenerateJwtToken(account.OverdraftAccountNum);
-            long balance = _bankService.GetBalance(bearerToken, account.OverdraftAccountNum);
+            long balance = await _bankService.GetBalanceAsync(bearerToken, account.OverdraftAccountNum);
             
             return balance;
         }
@@ -77,7 +74,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             return approvalAmount;
         }
 
-        private string CreateUser(IOverdraftService.OverdraftRequest request)
+        private async Task<string> CreateUserAsync(IOverdraftService.OverdraftRequest request)
         {
             const string userPrefix = "OD_";
             string username = userPrefix + request.Username;
@@ -98,12 +95,12 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
                 "000-00-0000");
             
             // Create the user.
-            string accountNum = _bankService.CreateUser(user);
+            string accountNum = await _bankService.CreateUserAsync(user);
 
             return accountNum;
         }
 
-        private void DepositOverdraft(string overdraftAccountNum, long amount)
+        private Task DepositOverdraft(string overdraftAccountNum, long amount)
         {
             const string OVERDRAFT_ROUTING_NUM = "883745001";
             const string OVERDRAFT_ACCOUNT_NUM = "1099990101";
@@ -116,7 +113,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
                 localRoutingNumber, amount, DateTime.UtcNow
             );
  
-            _bankService.AddTransaction(bearerToken, transaction);
+            return _bankService.AddTransactionAsync(bearerToken, transaction);
         }
     }
 }
