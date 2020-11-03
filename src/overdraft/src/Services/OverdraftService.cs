@@ -15,7 +15,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
         private readonly IConfiguration _configuration;
         private readonly IOverdraftRepository _repository;
         private readonly JwtHelper _jwtHelper;
-        private readonly string _localRoutingNumber;
+        private readonly string _localRoutingNum;
             
         public OverdraftService(IConfiguration configuration, ILogger<OverdraftService> logger, 
             IBankService bankService, IOverdraftRepository repository)
@@ -25,7 +25,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             _configuration = configuration;
             _repository = repository;
             _jwtHelper = new JwtHelper(_configuration);
-            _localRoutingNumber = _configuration["LOCAL_ROUTING_NUMBER"];
+            _localRoutingNum = _configuration["LOCAL_ROUTING_NUM"];
         }
 
         public async Task<long> CreateOverdraftAccountAsync(IOverdraftService.OverdraftRequest request)
@@ -66,8 +66,8 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             string bearerToken = _jwtHelper.GenerateJwtToken(account.OverdraftAccountNum);
 
             IBankService.Transaction transaction = new IBankService.Transaction(Guid.NewGuid(),
-                account.OverdraftAccountNum, _localRoutingNumber, accountNum, 
-                _localRoutingNumber, amount, DateTime.UtcNow
+                account.OverdraftAccountNum, _localRoutingNum, accountNum, 
+                _localRoutingNum, amount, DateTime.UtcNow
             );
  
             await _bankService.AddTransactionAsync(bearerToken, transaction);
@@ -82,7 +82,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             string bearerToken = _jwtHelper.GenerateJwtToken(accountNum);
 
             IBankService.Transaction transaction = new IBankService.Transaction(Guid.NewGuid(),
-                accountNum, _localRoutingNumber, account.OverdraftAccountNum, _localRoutingNumber,
+                accountNum, _localRoutingNum, account.OverdraftAccountNum, _localRoutingNum,
                 amount, DateTime.UtcNow
             );
             
@@ -96,7 +96,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
                         
             IBankService.Transaction transaction = new IBankService.Transaction(Guid.NewGuid(),
                 OVERDRAFT_SOURCE_ACCOUNT_NUM, OVERDRAFT_SOURCE_ROUTING_NUM, accountNum, 
-                _localRoutingNumber, amount, DateTime.UtcNow
+                _localRoutingNum, amount, DateTime.UtcNow
             );
  
             return _bankService.AddTransactionAsync(bearerToken, transaction);

@@ -29,9 +29,10 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
         }
 
         [HttpGet("/version")]
-        public ActionResult<Version> Version()
+        public ActionResult<string> Version()
         {
-            return Ok(typeof(OverdraftController).Assembly.GetName().Version);
+            string version = _configuration["VERSION"];
+            return Ok(version);
         }
 
         [HttpGet("/ready")]

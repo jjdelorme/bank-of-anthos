@@ -61,11 +61,11 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
 
         private SecurityKey GetJwtPublicKey()
         {
-            const string JWT_SECRET_NAME = "Jwt:PublicKey";
-            string secret = _configuration[JWT_SECRET_NAME];
+            string publicKeyPath = _configuration["PUB_KEY_PATH"];
+            string secret = System.IO.File.ReadAllText(publicKeyPath);
 
             if (string.IsNullOrEmpty(secret))
-                throw new ApplicationException($"Missing JWT Key: {JWT_SECRET_NAME}");
+                throw new ApplicationException($"Missing RSA Public Key in {publicKeyPath}");
 
             byte[] bytes = Convert.FromBase64String(secret);
             string key = Encoding.UTF8.GetString(bytes);
@@ -82,8 +82,11 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
 
         private SecurityKey GetJwtPrivateKey()
         {
-            const string JWT_PRIVATE_KEY = "Jwt:PrivateKey";
-            string secret = _configuration[JWT_PRIVATE_KEY];
+            string privateKeyPath = _configuration["PRIV_KEY_PATH"];
+            string secret = System.IO.File.ReadAllText(privateKeyPath);
+
+            if (string.IsNullOrEmpty(secret))
+                throw new ApplicationException($"Missing RSA Private Key in {privateKeyPath}");
 
             byte[] bytes = Convert.FromBase64String(secret);
             string key = Encoding.UTF8.GetString(bytes);
