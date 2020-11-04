@@ -35,7 +35,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
 
         public async Task<string> LoginAsync(string username, string password)
         {
-            const string TOKEN_PROPERTY = "token";
+            const string TokenProperty = "token";
             string url = $"{_apiAddress}/login";
 
             UriBuilder uriBuilder = new UriBuilder(url);
@@ -47,7 +47,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
                 throw new ApplicationException($"Unable to get token for {username}");
 
             var doc = JsonDocument.Parse(response.Content.ReadAsStream());
-            string token = doc.RootElement.GetProperty(TOKEN_PROPERTY).GetString();
+            string token = doc.RootElement.GetProperty(TokenProperty).GetString();
 
             if (token == null)
                 throw new ApplicationException("Unable to get token.");

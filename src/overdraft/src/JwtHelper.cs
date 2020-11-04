@@ -12,7 +12,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
 {
     public class JwtHelper
     {
-        const string JWT_ACCOUNT_KEY = "acct";
+        const string JwtAccountKey = "acct";
 
         private readonly IConfiguration _configuration;
 
@@ -38,7 +38,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new[] { new Claim(JWT_ACCOUNT_KEY, accountNum) }),
+                Subject = new ClaimsIdentity(new[] { new Claim(JwtAccountKey, accountNum) }),
                 Expires = DateTime.UtcNow.AddHours(1),
                 SigningCredentials = new SigningCredentials(GetJwtPrivateKey(), SecurityAlgorithms.RsaSha256)
             };
@@ -54,7 +54,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
                 out SecurityToken validatedToken);
 
             var jwtToken = (JwtSecurityToken)validatedToken;
-            var accountNum = jwtToken.Claims.First(x => x.Type == JWT_ACCOUNT_KEY).Value;
+            var accountNum = jwtToken.Claims.First(x => x.Type == JwtAccountKey).Value;
 
             // return account id from JWT token if validation successful
             return accountNum;
@@ -67,7 +67,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             var identity = httpContext?.User.Identity as ClaimsIdentity;
             if (identity != null)
             {
-                var accountClaim = identity.Claims.Where(c => c.Type == JWT_ACCOUNT_KEY).First();
+                var accountClaim = identity.Claims.Where(c => c.Type == JwtAccountKey).First();
                 if (accountClaim != null)
                 {
                     accountNum = accountClaim.Value;

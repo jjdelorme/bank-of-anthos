@@ -91,11 +91,11 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
 
         private Task SeedOverdraftAsync(string bearerToken, string accountNum, long amount)
         {
-            const string OVERDRAFT_SOURCE_ROUTING_NUM = "883745001";
-            const string OVERDRAFT_SOURCE_ACCOUNT_NUM = "1099990101";
+            const string OverdraftFromRoutingNum = "883745001";
+            const string OverdraftFromAccountNum = "1099990101";
                         
             IBankService.Transaction transaction = new IBankService.Transaction(Guid.NewGuid(),
-                OVERDRAFT_SOURCE_ACCOUNT_NUM, OVERDRAFT_SOURCE_ROUTING_NUM, accountNum, 
+                OverdraftFromAccountNum, OverdraftFromRoutingNum, accountNum, 
                 _localRoutingNum, amount, DateTime.UtcNow
             );
  
@@ -105,16 +105,16 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
         protected virtual long GetApprovalAmount(IOverdraftService.OverdraftRequest request)
         {
             // TODO: Refactor this into configuration.
-            const int minMonthsInJob = 6;
-            const int minIncome = 50000; // $500 per month (note decimals are not used)
-            const int percentMonthly = 10;
+            const int MinMonthsInJob = 6;
+            const int MinIncome = 50000; // $500 per month (note decimals are not used)
+            const int PercentMonthly = 10;
 
             long approvalAmount = 0;
             
-            if (request.MonthsInJob >= minMonthsInJob && 
-                request.MonthlyIncome > minIncome)
+            if (request.MonthsInJob >= MinMonthsInJob && 
+                request.MonthlyIncome > MinIncome)
             {
-                approvalAmount = request.MonthlyIncome / percentMonthly;
+                approvalAmount = request.MonthlyIncome / PercentMonthly;
                 approvalAmount = (long)(Math.Round(approvalAmount / 100.0) * 100);
                 
                 _logger.Log(LogLevel.Information, $"Approved {0:0.##, approvalAmount/100} for {request.AccountNum}");
@@ -125,8 +125,8 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
 
         private Task<string> CreateUserAsync(IOverdraftService.OverdraftRequest request)
         {
-            const string userPrefix = "OD_";
-            string username = userPrefix + request.Username;
+            const string UserPrefix = "OD_";
+            string username = UserPrefix + request.Username;
             string password = "overdraft";
 
             int maxLength = username.Length >=14 ? 14 : username.Length-1;
@@ -134,7 +134,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             var user = new IBankService.NewUser(
                 username.Substring(0, maxLength),
                 password, 
-                userPrefix, 
+                UserPrefix, 
                 request.Fullname,
                 DateTime.MinValue,
                 "GMT",
