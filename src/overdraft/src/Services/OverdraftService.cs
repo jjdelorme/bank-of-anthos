@@ -129,7 +129,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             string username = UserPrefix + request.Username;
             string password = "overdraft";
 
-            int maxLength = username.Length >=14 ? 14 : username.Length-1;
+            int maxLength = username.Length >=14 ? 14 : username.Length;
 
             var user = new IBankService.NewUser(
                 username.Substring(0, maxLength),
