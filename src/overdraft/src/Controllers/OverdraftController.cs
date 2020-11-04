@@ -61,7 +61,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             }
             catch (Exception e)
             {
-                return BadRequest(e.Message);
+                return StatusCode(500, e.Message);
             }
         }
 
@@ -80,7 +80,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             }
             catch (Exception e)
             {
-                return BadRequest(e.Message);
+                return StatusCode(500, e.Message);
             }
         }
 
@@ -99,7 +99,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             }
             catch (Exception e)
             {
-                return BadRequest(e.Message);
+                return StatusCode(500, e.Message);
             }
         }
 
@@ -120,7 +120,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             }
             catch (Exception e)
             {
-                return BadRequest(e.Message);
+                return StatusCode(500, e.Message);
             }
         }
 

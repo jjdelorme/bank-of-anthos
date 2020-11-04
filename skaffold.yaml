@@ -37,7 +37,7 @@ build:
     context: src/accounts-db
   - image: gcr.io/bank-of-anthos/ledger-db
     context: src/ledger-db
-  - image: gcr.io/jasondel-test-project/overdraft
+  - image: gcr.io/bank-of-anthos/overdraft
     context: src/overdraft
   tagPolicy:
     gitCommit: {}
