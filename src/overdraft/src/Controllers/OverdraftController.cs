@@ -140,21 +140,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
 
         private string GetAccountNumber()
         {
-            const string claimType = "acct";
-            string accountNum = null;
-
-            var identity = HttpContext?.User.Identity as ClaimsIdentity;
-            if (identity != null)
-            {
-                var accountClaim = identity.Claims.Where(c => c.Type == claimType).First();
-                if (accountClaim != null)
-                {
-                    accountNum = accountClaim.Value;
-                    _logger.Log(LogLevel.Debug, $"Got account claim: {accountNum}");
-                }
-            }
-            
-            return accountNum;
+            return JwtHelper.GetAccountFromHttpContext(this.HttpContext);
         }
     }
 }

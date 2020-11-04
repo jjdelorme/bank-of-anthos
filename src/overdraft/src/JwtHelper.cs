@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
 
@@ -58,6 +59,23 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             // return account id from JWT token if validation successful
             return accountNum;
         }
+
+        public static string GetAccountFromHttpContext(HttpContext httpContext)
+        {
+            string accountNum = null;
+
+            var identity = httpContext?.User.Identity as ClaimsIdentity;
+            if (identity != null)
+            {
+                var accountClaim = identity.Claims.Where(c => c.Type == JWT_ACCOUNT_KEY).First();
+                if (accountClaim != null)
+                {
+                    accountNum = accountClaim.Value;
+                }
+            }
+            
+            return accountNum;
+        }        
 
         private SecurityKey GetJwtPublicKey()
         {
