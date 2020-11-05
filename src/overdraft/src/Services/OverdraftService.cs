@@ -37,9 +37,11 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             if (account.Amount <= 0)
                 throw new ApplicationException($"Account {request.AccountNum} not approved for overdraft.");
 
-            account.OverdraftAccountNum = await CreateUserAsync(request);
-            string bearerToken = _jwtHelper.GenerateJwtToken(account.OverdraftAccountNum);
-            
+             string bearerToken = await CreateUserAsync(request);
+
+            JwtHelper jwtHelper = new JwtHelper(_configuration);            
+            account.OverdraftAccountNum = jwtHelper.GetAccountFromToken(bearerToken);
+
             await Task.WhenAll(
                 SeedOverdraftAsync(bearerToken, account.OverdraftAccountNum, account.Amount),
                 _repository.AddAsync(account)

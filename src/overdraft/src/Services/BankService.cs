@@ -21,7 +21,6 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             _configuration = configuration;
             _logger = logger;
             _httpClient = httpClient;
-            _httpClient.DefaultRequestHeaders.Clear();
         }
 
         public async Task AddTransactionAsync(string bearerToken, IBankService.Transaction transaction)
@@ -29,6 +28,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             string transactionsApiAddress = GetApiAddress("TRANSACTIONS_API_ADDR");
             string url = $"{transactionsApiAddress}/transactions";           
 
+            _httpClient.DefaultRequestHeaders.Clear();
             _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {bearerToken}");
             var response = await _httpClient.PostAsJsonAsync(url, transaction);
             var content = await response.Content.ReadAsStringAsync();
@@ -44,6 +44,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             string balancesApiAddress = GetApiAddress("BALANCES_API_ADDR");
             string url = $"{balancesApiAddress}/balances/{accountNum}";
 
+            _httpClient.DefaultRequestHeaders.Clear();
             _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {bearerToken}");
             var response = await _httpClient.GetAsync(url);
             var content = await response.Content.ReadAsStringAsync();
@@ -55,29 +56,22 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
         }
 
         /// <summary>
-        /// Creates a new user and returns the new Account Number.
+        /// Creates a new user and returns the bearer token for the user.
         /// </summary>
-        /// <returns>
-        /// AccountNum
-        /// </returns>
         public async Task<string> CreateUserAsync(IBankService.NewUser request)
         {
             UserService user = new UserService(_httpClient, GetApiAddress("USERSERVICE_API_ADDR"));
-            await user.CreateUserAsync(request); 
 
+            await user.CreateUserAsync(request); 
             _logger.Log(LogLevel.Information, $"Account {request.username} created.");
 
             string token = await user.LoginAsync(request.username, request.password);
-
             _logger.Log(LogLevel.Debug, $"Logged in as {request.username}.");
             
-            JwtHelper jwtHelper = new JwtHelper(_configuration);            
-            string accountNum = jwtHelper.GetAccountFromToken(token);
+            if (token == null)
+                throw new ApplicationException($"Unable to get token for {request.username}");
 
-            if (accountNum == null)
-                throw new ApplicationException($"Unable to get account number from token for {request.username}");
-
-            return accountNum;
+            return token;
         }
 
         /// <summary>

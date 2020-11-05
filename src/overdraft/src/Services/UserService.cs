@@ -26,6 +26,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
 
             var formContent = GetUserFormContent(request);
 
+            _httpClient.DefaultRequestHeaders.Clear();
             var response = await _httpClient.PostAsync(url, formContent);
             var content = await response.Content.ReadAsStringAsync();
 
@@ -42,6 +43,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             uriBuilder.Query = $"username={username}&password={password}";
             Uri uri = uriBuilder.Uri;
           
+            _httpClient.DefaultRequestHeaders.Clear();
             var response = await _httpClient.GetAsync(uri);
             if (!response.IsSuccessStatusCode)
                 throw new ApplicationException($"Unable to get token for {username}");
