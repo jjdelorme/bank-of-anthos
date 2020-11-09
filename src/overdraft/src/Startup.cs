@@ -5,16 +5,24 @@ using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Google.Cloud.Diagnostics.AspNetCore;
+using Google.Cloud.Diagnostics.Common;
 
 namespace Anthos.Samples.BankOfAnthos.Overdraft
 {
     public class Startup
     {
+        private readonly string _projectId;
+        private readonly string _version; 
+
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
+            _projectId = Configuration["GOOGLE_PROJECT_ID"];
+            _version = Configuration["VERSION"];
         }
 
         public IConfiguration Configuration { get; }
@@ -22,6 +30,22 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            // Add google exception logging
+            services.AddGoogleExceptionLogging(options =>
+            {
+                options.ProjectId = _projectId;
+                options.ServiceName = "overdraftservice";
+                options.Version = _version;
+            });
+
+            // Add trace service.
+            services.AddGoogleTrace(options =>
+            {
+                options.ProjectId = _projectId;
+                options.Options = TraceOptions.Create(
+                    bufferOptions: BufferOptions.NoBuffer());
+            });
+
             // BankOfAnthos specific services used with dependency injection.
             services.AddSingleton<IBankService, BankService>();
             services.AddScoped<IOverdraftRepository, FirestoreOverdraftRepository>();
@@ -30,16 +54,20 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new OpenApiInfo { 
+                c.SwaggerDoc(_version, new OpenApiInfo { 
                     Title = "Anthos.Samples.BankOfAnthos.Overdraft", 
-                    Version = "v1" });
+                    Version = _version });
             });
 
             ConfigureJwtAuth(services);
+
+            // Setup DI for http client (recommended), also adds GoogleTracing.
+            services.AddHttpClient<IBankService, BankService>()
+                .AddOutgoingGoogleTraceHandler();            
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
         {
             if (env.IsDevelopment())
             {
@@ -55,6 +83,13 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             {
                 app.UseHttpsRedirection();
             }
+
+            loggerFactory.AddGoogle(app.ApplicationServices, _projectId);
+
+            // Configure error reporting service.
+            app.UseGoogleExceptionLogging();
+            // Configure trace service.
+            app.UseGoogleTrace();
 
             app.UseRouting();
 
@@ -82,9 +117,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
                 x.IncludeErrorDetails = true;
                 x.SaveToken = true;
                 x.TokenValidationParameters = jwtHelper.GetJwtValidationParameters();
-            });         
-
-            services.AddHttpClient<IBankService, BankService>();               
+            });
         }
     }
 }

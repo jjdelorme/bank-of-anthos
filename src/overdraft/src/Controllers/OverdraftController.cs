@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Request = Anthos.Samples.BankOfAnthos.Overdraft.IOverdraftService.OverdraftRequest;
+using Google.Cloud.Diagnostics.Common;
 
 namespace Anthos.Samples.BankOfAnthos.Overdraft
 {
@@ -49,19 +50,15 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
         /// </returns>
         [Authorize]
         [HttpPost("/create")]
-        public async Task<IActionResult> Create(Request request)
+        public async Task<IActionResult> Create([FromServices] IManagedTracer tracer, Request request)
         {
-            if (!ValidateAccount(request.AccountNum))
-                return new UnauthorizedResult();
-
-            try
+            using (tracer.StartSpan(nameof(Create)))
             {
+                if (!ValidateAccount(request.AccountNum))
+                    return new UnauthorizedResult();
+
                 long amount = await _overdraft.CreateOverdraftAccountAsync(request);
                 return Ok(amount);
-            }
-            catch (Exception e)
-            {
-                return StatusCode(500, e.Message);
             }
         }
 
