@@ -54,6 +54,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
         {
             using (tracer.StartSpan(nameof(Create)))
             {
+                _logger.LogDebug($"TraceID: {tracer.GetCurrentTraceId()}");
                 if (!ValidateAccount(request.AccountNum))
                     return new UnauthorizedResult();
 
