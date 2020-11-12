@@ -119,7 +119,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
                 approvalAmount = request.MonthlyIncome / PercentMonthly;
                 approvalAmount = (long)(Math.Round(approvalAmount / 100.0) * 100);
                 
-                _logger.Log(LogLevel.Information, $"Approved {0:0.##, approvalAmount/100} for {request.AccountNum}");
+                _logger.Log(LogLevel.Information, $"Approved {(approvalAmount / 100.0), 0:F2} for {request.AccountNum}");
             }
 
             return approvalAmount;
