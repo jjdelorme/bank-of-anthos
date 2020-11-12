@@ -75,7 +75,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
                 app.UseSwagger();
                 app.UseSwaggerUI(c => 
                 {
-                    c.SwaggerEndpoint("/swagger/v1/swagger.json", "overdraft v1");
+                    c.SwaggerEndpoint($"/swagger/{_version}/swagger.json", $"overdraft {_version}");
                     c.RoutePrefix = string.Empty;
                 });
             }
