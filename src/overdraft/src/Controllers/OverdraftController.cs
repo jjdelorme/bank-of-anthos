@@ -55,6 +55,7 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
             using (tracer.StartSpan(nameof(Create)))
             {
                 _logger.LogDebug($"TraceID: {tracer.GetCurrentTraceId()}");
+
                 if (!ValidateAccount(request.AccountNum))
                     return new UnauthorizedResult();
 
@@ -68,17 +69,13 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
         /// </summary>        
         [Authorize]
         [HttpPost("/credit")]
-        public async Task<IActionResult> Credit([FromBody]long amount)
+        public async Task<IActionResult> Credit([FromServices] IManagedTracer tracer, [FromBody]long amount)
         {
-            string accountNum = GetAccountNumber();
-            try
-            {
+            using (tracer.StartSpan(nameof(Credit)))
+            {            
+                string accountNum = GetAccountNumber();
                 await _overdraft.CreditAsync(accountNum, amount);
                 return Ok();
-            }
-            catch (Exception e)
-            {
-                return StatusCode(500, e.Message);
             }
         }
 
@@ -87,17 +84,13 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
         /// </summary>        
         [Authorize]
         [HttpPost("/debit")]
-        public async Task<IActionResult> Debit([FromBody]long amount)
+        public async Task<IActionResult> Debit([FromServices] IManagedTracer tracer, [FromBody]long amount)
         {
-            string accountNum = GetAccountNumber();
-            try
-            {
+            using (tracer.StartSpan(nameof(Debit)))
+            {            
+                string accountNum = GetAccountNumber();
                 await _overdraft.DebitAsync(accountNum, amount);
                 return Ok();
-            }
-            catch (Exception e)
-            {
-                return StatusCode(500, e.Message);
             }
         }
 
@@ -106,19 +99,15 @@ namespace Anthos.Samples.BankOfAnthos.Overdraft
         /// </summary>        
         [Authorize]
         [HttpGet("/balance/{accountNum}")]
-        public async Task<ActionResult<long>> GetBalance(string accountNum)
+        public async Task<ActionResult<long>> GetBalance([FromServices] IManagedTracer tracer, string accountNum)
         {
-            if (!ValidateAccount(accountNum))
-                return new UnauthorizedResult();
+            using (tracer.StartSpan(nameof(GetBalance)))
+            {                        
+                if (!ValidateAccount(accountNum))
+                    return new UnauthorizedResult();
 
-            try
-            {
                 long balance = await _overdraft.GetOverdraftBalanceAsync(accountNum);
                 return Ok(balance);
-            }
-            catch (Exception e)
-            {
-                return StatusCode(500, e.Message);
             }
         }
 
